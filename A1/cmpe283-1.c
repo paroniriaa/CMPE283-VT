@@ -258,10 +258,10 @@ detect_vmx_features(void)
 	report_capability(proc_s_based_exe_ctls, 28, lo, hi);
 
 	/* Processor-Based VM-Execution Controls - Tertiary (4)*/
-	rdmsr(IA32_VMX_PROCBASED_CTLS3, lo, hi);
-	pr_info("Tertiary Processor-Based VM-Execution Controls MSR: 0x%llx\n",
-		(uint64_t)(lo | (uint64_t)hi << 32));
-	report_capability(proc_t_based_exe_ctls, 4, lo, hi);	
+	//rdmsr(IA32_VMX_PROCBASED_CTLS3, lo, hi);
+	//pr_info("Tertiary Processor-Based VM-Execution Controls MSR: 0x%llx\n",
+	//	(uint64_t)(lo | (uint64_t)hi << 32));
+	//report_capability(proc_t_based_exe_ctls, 4, lo, hi);	
 
 	/* VM-Exit Controls (17)*/
 	rdmsr(IA32_VMX_EXIT_CTLS, lo, hi);
