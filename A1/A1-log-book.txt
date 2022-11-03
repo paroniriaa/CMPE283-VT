@@ -12,7 +12,7 @@ All commands listed here are done in a Linux(Ubunto), so try to modify some step
 3. Enable Computer Engine API, wait for its initializiation to be done.
 
 4. Configure VM Intance on GCP:
-        Go to GCP -> Compute Engine -> Create a VM:
+        Go to GCP -> Compute Engine -> Virtual Machines -> VM instances -> Create instance:
         Name: Instance-1
         Region: us-west1(Oregon)
         Zone: us-west1-a
@@ -32,6 +32,7 @@ All commands listed here are done in a Linux(Ubunto), so try to modify some step
                 Min Cpu Platform: "Intel Cascade Lake" -> this need to be done using command line
 
 5. You can save the scripts for creating a GCP VM(click on equivalent command line):
+        # run gcloud commands either on your machine's shell or GCP's cloud shell
         gcloud compute instances create instance-1 --project=<gcp-project-id> --zone=us-west1-a --machine-type=n2-standard-2 --network-interface=network-tier=PREMIUM --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=558940717781-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance-1,image=projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221018,mode=rw,size=10,type=projects/<gcp-project-id>/zones/us-west1-a/diskTypes/pd-ssd --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any --enable-nested-virtualization --min-cpu-platform="Intel Cascade Lake"
 
 6. Run the VM generation script on step 5 and create the desired VM on GCP:
@@ -44,6 +45,7 @@ All commands listed here are done in a Linux(Ubunto), so try to modify some step
                 gcloud compute instances create instance-1 --project=<gcp-project-id> --zone=us-west1-a --machine-type=n2-standard-2 --network-interface=network-tier=PREMIUM --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=558940717781-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance-1,image=projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221018,mode=rw,size=10,type=projects/<gcp-project-id>/zones/us-west1-a/diskTypes/pd-ssd --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any --enable-nested-virtualization --min-cpu-platform="Intel Cascade Lake"
 
 7. Generate public and private SSH-KEY:
+        # you should run this only one time, then copy your ssh key
         # modify it before you use
         bash gcp-gen-ssh.sh:       
                 # define $USER if needed
@@ -56,7 +58,7 @@ All commands listed here are done in a Linux(Ubunto), so try to modify some step
         Go to GCP -> Compute Engine -> Settings -> Metadata -> SSH Keys -> Add Item ->
                 # the format should looks like the following
                 Username: <your name> (it will get auto generated)
-                Key: ssh-sra AAAA.....XfGI0= <your name>
+                Key: ssh-sra AAAA.....XfGI0= <your name> (just copy from ssh-sra...to the end)
 
 9. Connecte to default VM instance-1 in GCP:
         # modify it before you use 
@@ -76,6 +78,7 @@ All commands listed here are done in a Linux(Ubunto), so try to modify some step
 11. Install necessary compilation tools:
         sudo apt-get install gcc
         sudo apt-get install make
+        #This line of command may not necessary work as $(uname -r) does not guarantee to give the 'right' version for your linux-headers(such as WSL)
         sudo apt-get install linux-headers-$(uname -r)
         
         # If failed, try to use the following to find the right version of linux header for your machine
@@ -162,3 +165,17 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 16. Try compile and run the initial cmpe283-1.c code and check the kernel output:
         make clean
         make all
+        # if you are using my version of Makefile (recommended)
+        make test
+
+        if everthing works fine, you should be able to see soemthing like this:
+                [ 4621.880759] CMPE 283 Assignment 1 Module Start
+                [ 4621.880764] Pinbased Controls MSR: 0x3f00000016
+                [ 4621.880766]   External Interrupt Exiting: Can set=Yes, Can clear=Yes
+                [ 4621.880767]   NMI Exiting: Can set=Yes, Can clear=Yes
+                [ 4621.880767]   Virtual NMIs: Can set=Yes, Can clear=Yes
+                [ 4621.880768]   Activate VMX Preemption Timer: Can set=No, Can clear=Yes
+                [ 4621.880769]   Process Posted Interrupts: Can set=No, Can clear=Yes
+
+        If you see the info printed aboves, congrazzzz, you finished the FIRST step of this assignment! :DDD 
+        Now lets continue our jounary on finding some more MSRs infos about our machine!
