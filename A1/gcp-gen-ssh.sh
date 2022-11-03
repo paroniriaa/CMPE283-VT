@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "Connecting to default SSH keys using ssh-keygen..."
+echo "Generating default SSH keys using ssh-keygen..."
 
 ssh-keygen -t rsa -f ~/.ssh/google_cloud_key -C $USER
 
