@@ -229,8 +229,6 @@ report_capability(struct capability_info *cap, uint8_t len, uint32_t lo,
 	}
 }
 
-
-
 /*
  * detect_vmx_features
  *
@@ -242,48 +240,56 @@ detect_vmx_features(void)
 	uint32_t lo, hi;
 
 	/* Pin-Based VM-Execution Controls (5) */
+	printk(KERN_INFO "Printing Pin-Based VM-Execution Controls... \n");
 	rdmsr(IA32_VMX_PINBASED_CTLS, lo, hi);
 	pr_info("Pin-Based VM-Execution Controls MSR: 0x%llx\n",
 		(uint64_t)(lo | (uint64_t)hi << 32));
 	report_capability(pin_based_exe_ctls, 5, lo, hi);
 
 	/* Processor-Based VM-Execution Controls - Primary (22) */
+	printk(KERN_INFO "Printing Processor-Based VM-Execution Controls... \n");
 	rdmsr(IA32_VMX_PROCBASED_CTLS, lo, hi);
 	pr_info("Primary Processor-Based VM-Execution Controls MSR: 0x%llx\n",
 		(uint64_t)(lo | (uint64_t)hi << 32));
 	report_capability(proc_p_based_exe_ctls, 22, lo, hi);
 
-	/* Validation Check for Secondary and Tertiary Processor-Based VM-Execution Controls */
+	/* Validation Check For Printing Secondary Processor-Based VM-Execution Controls */
 	/* proc_p_based_exe_ctls[21] = { 31, "Activate Secondary Controls" } */
-	/* proc_p_based_exe_ctls[9] = { 17, "Activate Tertiary Controls" } */
-	struct capability_info *act_sec_ctl = &proc_p_based_exe_ctls[21];
-	struct capability_info *act_ter_ctl = &proc_p_based_exe_ctls[9];
-	bool activated_secondary_controls = (hi & (1 << act_sec_ctl->bit)) ? true : false;
-	bool activated_tertiary_controls = (hi & (1 << act_ter_ctl->bit)) ? true : false;
-
-	if (activated_secondary_controls) {
+	if (hi & (1 << 31)) {
 		/* Processor-Based VM-Execution Controls - Secondary (28) */
+		printk(KERN_INFO "Printing Secondary Processor-Based VM-Execution Controls...\n");
 		rdmsr(IA32_VMX_PROCBASED_CTLS2, lo, hi);
 		pr_info("Secondary Processor-Based VM-Execution Controls MSR: 0x%llx\n",
 			(uint64_t)(lo | (uint64_t)hi << 32));
 		report_capability(proc_s_based_exe_ctls, 28, lo, hi);
 	}
+	else {
+		printk(KERN_INFO "Secondary Processor-Based VM-Execution Controls Printing Is Skiped As It Is Not Activated... \n");
+	}
 
-	if (activated_tertiary_controls) {
+	/* Validation Check For Printing Tertiary Processor-Based VM-Execution Controls */
+	/* proc_p_based_exe_ctls[9] = { 17, "Activate Tertiary Controls" } */
+	if (hi & (1 << 17)) {
 		/* Processor-Based VM-Execution Controls - Tertiary (4) */
+		printk(KERN_INFO "Printing Tertiary Processor-Based VM-Execution Controls... \n");
 		rdmsr(IA32_VMX_PROCBASED_CTLS3, lo, hi);
 		pr_info("Tertiary Processor-Based VM-Execution Controls MSR: 0x%llx\n",
 			(uint64_t)(lo | (uint64_t)hi << 32));
 		report_capability(proc_t_based_exe_ctls, 4, lo, hi);	
 	}
+	else {
+		printk(KERN_INFO "Tertiary Processor-Based VM-Execution Controls Printing Is Skiped As It Is Not Activated... \n");
+	}
 
 	/* VM-Exit Controls (17) */
+	printk(KERN_INFO "Printing VM-Exit Controls... \n");
 	rdmsr(IA32_VMX_EXIT_CTLS, lo, hi);
 	pr_info("VM-Exit Controls MSR: 0x%llx\n",
 		(uint64_t)(lo | (uint64_t)hi << 32));
 	report_capability(exit_ctls, 17, lo, hi);
 
 	/* VM-Entry Controls (13) */
+	printk(KERN_INFO "Printing VM-Entry Controls... \n");
 	rdmsr(IA32_VMX_ENTRY_CTLS, lo, hi);
 	pr_info("VM-Entry Controls: 0x%llx\n",
 		(uint64_t)(lo | (uint64_t)hi << 32));
