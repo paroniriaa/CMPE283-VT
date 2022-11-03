@@ -1,0 +1,164 @@
+---CRITICAL NOTE---
+All commands listed here are done in a Linux(Ubunto), so try to modify some steps/elements if you are using Windows/Mac.
+
+0. (Optional) You can first download and install GCP CLI tools:
+        Check out https://cloud.google.com/sdk/docs/install to install it. 
+
+1. Set up free billing account using the Google Cloud Education Credit Coupon 
+        Note: Much thanks to Prof. Mike Larkin and GCP Education Team, you guys are great! :D
+
+2. Create new project named CMPE-283, and connect it with the billing account created in step 1.
+
+3. Enable Computer Engine API, wait for its initializiation to be done.
+
+4. Configure VM Intance on GCP:
+        Go to GCP -> Compute Engine -> Create a VM:
+        Name: Instance-1
+        Region: us-west1(Oregon)
+        Zone: us-west1-a
+        Series: N2
+        Machine type: n2-standard-2 (2 vCPU, 8GB memory)
+        Boot disk:
+                Public Images:
+                        Operating System: Ubuntu
+                        Version: Ubuntu 22.04 LTS (x86/64, amd64 jammy image built on 2022-10-18, supports Shielded VM features)
+                        Boot Disk Type: SSD persistent disk
+                        Size: 10
+        Identity and API access: Compute Engine default service account
+        Access scopes: Allow default access
+        Firewall: Allow HTTP/HTTPS traffic
+        Note:
+                Nested Virtualization: True -> this need to be done using command line
+                Min Cpu Platform: "Intel Cascade Lake" -> this need to be done using command line
+
+5. You can save the scripts for creating a GCP VM(click on equivalent command line):
+        gcloud compute instances create instance-1 --project=<gcp-project-id> --zone=us-west1-a --machine-type=n2-standard-2 --network-interface=network-tier=PREMIUM --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=558940717781-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance-1,image=projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221018,mode=rw,size=10,type=projects/<gcp-project-id>/zones/us-west1-a/diskTypes/pd-ssd --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any --enable-nested-virtualization --min-cpu-platform="Intel Cascade Lake"
+
+6. Run the VM generation script on step 5 and create the desired VM on GCP:
+        # modify it before you use
+        bash gcp-create-vm.sh:
+                gcloud auth login
+
+                gcloud config set project <gcp-project-id>
+
+                gcloud compute instances create instance-1 --project=<gcp-project-id> --zone=us-west1-a --machine-type=n2-standard-2 --network-interface=network-tier=PREMIUM --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=558940717781-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance-1,image=projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221018,mode=rw,size=10,type=projects/<gcp-project-id>/zones/us-west1-a/diskTypes/pd-ssd --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any --enable-nested-virtualization --min-cpu-platform="Intel Cascade Lake"
+
+7. Generate public and private SSH-KEY:
+        # modify it before you use
+        bash gcp-gen-ssh.sh:       
+                # define $USER if needed
+
+                ssh-keygen -t rsa -f ~/.ssh/google_cloud_key -C $USER
+                
+                cat /home/$USER/.ssh/google_cloud_key.pub
+
+8. Save the generated SSH public key to GCP VM Metadata:
+        Go to GCP -> Compute Engine -> Settings -> Metadata -> SSH Keys -> Add Item ->
+                # the format should looks like the following
+                Username: <your name> (it will get auto generated)
+                Key: ssh-sra AAAA.....XfGI0= <your name>
+
+9. Connecte to default VM instance-1 in GCP:
+        # modify it before you use 
+        bash gcp-ssh-vm.sh
+                # define $USER if needed 
+                
+                EXTERNAL_IP="<your VM external IP>"
+
+                ssh -i ~/.ssh/google_cloud_key $USER@$EXTERNAL_IP
+
+10. Clone the Course GitHub Repo to the VM:
+        # Your GitHub Repo should contains the initial files that provided by Prof. Mike Larkin:
+                # 283_Assignment1-F22.pdf, cmpe283-1.c, Makefile
+        # your https-based GitHub Repo looks like this: https://github.com/paroniriaa/CMPE283-VT.git
+        git clone <your https-based GitHub Repo>
+
+11. Install necessary compilation tools:
+        sudo apt-get install gcc
+        sudo apt-get install make
+        sudo apt-get install linux-headers-$(uname -r)
+        
+        # If failed, try to use the following to find the right version of linux header for your machine
+                apt search linux-headers
+                ls -l /usr/src/linux-headers-$(uname -r)
+
+        #---CRITICAL NOTE---: 
+                If you are using WSL/WSL2, you will not be able to find the
+                coresspoinding linux header because the base WSL2 kernel does not 
+                allow modules to be loaded. You have to download, compile and use 
+                your own kernel build. 
+                For details, refer to https://unix.stackexchange.com/questions/594470/wsl-2-does-not-have-lib-modules
+                Also, here's the WSL2 kernel GitHub Repo https://github.com/microsoft/WSL2-Linux-Kernel
+
+12. (Optional) Install GitHub for ease of use when performing push/pull to the Course GitHub Repo
+        type -p curl >/dev/null || sudo apt install curl -y
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+&& sudo apt update \
+&& sudo apt install gh -y
+
+13. (Optional) Login to the GitHub account for avoiding multiple auth promots when performing push/pull:
+        gh auth login
+        ? What account do you want to log into? GitHub.com
+        ? What is your preferred protocol for Git operations? HTTPS
+        ? Authenticate Git with your GitHub credentials? Yes
+        ? How would you like to authenticate GitHub CLI? Login with a web browser
+
+14. (Optional) Install GPG for GPG key export and commit signature:
+        sudo apt-get install gnupg
+        gpg --list-keys 
+        gpg --full-generate-key 
+                RSA and RSA (default)
+                4096
+                1y
+                Y 
+                <your name> 
+                <your email> 
+                <your password>
+                <your password again>
+        gpg --list-keys 
+        gpg --export --armor <your email>
+        gpg --export --armor --output <some file name>.gpg.pub <your email>
+
+15. (Optional) Configure Git global proerites for auto sign using GPG key when commit:
+        git config --global user.name <your name>
+        git config --global user.email <your email>
+        gpg --list-secret-keys --keyid-format=long
+                #sec   rsa4096/<your-private-key> 
+        git config --global gpg.program gpg
+        git config --global user.signingKey your-private-key 
+        git config --global commit.gpgsign true
+        git config --global --list
+
+        # commit your code by the following
+        git add -A 
+        git status
+        git commit -m "<your commmit message>"
+        git push
+
+        Note: 
+        you might encounter errors like:
+                error: gpg failed to sign the data
+                fatal: failed to write commit object
+        you can fix it by:
+                export GPG_TTY=$(tty)
+        you might want to make it auto export whenever you initialize your bash
+        so you dont have to do it every time by yourself:
+                modify ~/.zshrc:
+                        GPG_TTY=$(tty)
+                        export GPG_TTY
+
+
+        # check your signed/unsigne log history ezily
+        git log --pretty="format:%h %G? %aN  %s"
+        
+        Note: 
+        In case you mess up something, dont worry, heres a trick for you to revoke commit using git:
+                #n is the number of commits you wanna revokes
+                git reset --soft HEAD~n
+                git push origin +main --force
+        
+16. Try compile and run the initial cmpe283-1.c code and check the kernel output:
+        make clean
+        make all
