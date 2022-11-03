@@ -152,7 +152,6 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
                         GPG_TTY=$(tty)
                         export GPG_TTY
 
-
         # check your signed/unsigne log history ezily
         git log --pretty="format:%h %G? %aN  %s"
         
@@ -161,8 +160,13 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
                 #n is the number of commits you wanna revokes
                 git reset --soft HEAD~n
                 git push origin +main --force
+        In case you mess up on some branch and want to force sync your local branch with the current main branch:        
+                git reset --hard origin/main
         
-16. Try compile and run the initial cmpe283-1.c code and check the kernel output:
+16. Try compile and run the initial cmpe283-1.c code and check the kernel output of MSR discovery(IA32_VMX_PINBASED_CTLS for now):
+        # the initial implementation of cmpe283-1.c should have included the discovery of IA32_VMX_PINBASED_CTLS
+        # so we just gonna compile it and run it to make sure our working enviroment is compatible
+
         make clean
         make all
         # if you are using my version of Makefile (recommended)
@@ -177,5 +181,139 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
                 [ 4621.880768]   Activate VMX Preemption Timer: Can set=No, Can clear=Yes
                 [ 4621.880769]   Process Posted Interrupts: Can set=No, Can clear=Yes
 
-        If you see the info printed aboves, congrazzzz, you finished the FIRST step of this assignment! :DDD 
+        If you see the info printed aboves, congrazzzz, you finished the MSR discovery of IA32_VMX_PINBASED_CTLS, which is FIRST step of this assignment! :DDD 
         Now lets continue our jounary on finding some more MSRs infos about our machine!
+
+17. Now we need to modify cmpe283-1.c to support other MSR discovery:
+        Note:
+        You will definitely need the Intel hand book (Intel® 64 and IA-32 Architectures Software Developer Manuals) 
+        to do the following, you can download here https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html
+        (Choose the version - Intel® 64 and IA-32 Architectures Software Developer’s Manual Combined Volumes: 1, 2A, 2B, 2C, 2D, 3A, 3B, 3C, 3D, and 4)
+        
+        let's make a table so its esaier for us to understand what we need to do, and where to find the needed materials:
+        MSR Name                        MSR Index       capability_info struct based array (reference from book)
+        IA32_VMX_PINBASED_CTLS          0x481           Page 3746 -> Table 24-5. Definitions of Pin-Based VM-Execution Controls
+        IA32_VMX_PROCBASED_CTLS         0x482           Page 3746 -> Table 24-6. Definitions of Primary Processor-Based VM-Execution Controls
+        IA32_VMX_PROCBASED_CTLS2        0x48B           Page 3748 -> Table 24-7. Definitions of Secondary Processor-Based VM-Execution Controls
+        IA32_VMX_PROCBASED_CTLS3        0x492           Page 3749 -> Table 24-8. Definitions of Tertiary Processor-Based VM-Execution Controls
+        IA32_VMX_EXIT_CTLS              0x483           Page 3756 -> Table 24-13. Definitions of Primary VM-Exit Controls
+        IA32_VMX_ENTRY_CTLS             0x484           Page 3758 -> Table 24-15. Definitions of VM-Entry Controls
+
+        Based on each MSR, define its Macros(MSR Name) with value(MSRIndex), and declears gloabl variables(capability_info struct based array)
+        using the reference from book, each array element(capability_info struct) has two field: Bit Position(uint8_t), Name(const char *).
+
+        Then go to the detect_vmx_features() function and update all the newly defined MSRs discovery by making multiple calls to report_capability()
+        function with differnt sets of MSRs discovery parameters.
+
+        Note:
+        Depends on the capability of the machine, Secondary Processor-Based VM-Execution Controls(IA32_VMX_PROCBASED_CTLS2)
+        and Tertiary Processor-Based VM-Execution Controls(IA32_VMX_PROCBASED_CTLS3) may or may not be used. We can check
+        the its capability by the following bits in Primary Processor-Based VM-Execution Controls(IA32_VMX_PROCBASED_CTLS):
+                -> If bit 31 is 1 -> Activate secondary controls can be used -> we should check IA32_VMX_PROCBASED_CTLS2
+                -> If bit 17 is 1 -> Activate tertiary controls can be used -> we should check IA32_VMX_PROCBASED_CTLS3
+
+        "added validation check for Secondary and Tertiary Processor-Based VM-Execution Controls before reporting their capabilities"
+
+18. If things goes smooth, now our cmpe283.1 shoudl be able to print all 6 types of MSRs discovery in the kernel. Of course, as we discuss in the
+previous steps, the Secondary and Tertiary Processor-Based VM-Execution Controls may not be printed if Primary Controls did not activate them.
+Neverless, you should get the printing result from kernel that looks like the following:
+        [21573.909893] CMPE 283 Assignment 1 Module Start
+        [21573.909895] Printing Pin-Based VM-Execution Controls...
+        [21573.909897] Pin-Based VM-Execution Controls MSR: 0x3f00000016
+        [21573.909899] 0  External-Interrupt Exiting: Can set=Yes, Can clear=Yes
+        [21573.909900] 3  NMI Exiting: Can set=Yes, Can clear=Yes
+        [21573.909900] 5  Virtual NMIs: Can set=Yes, Can clear=Yes
+        [21573.909901] 6  Activate VMX-Preemption Timer: Can set=No, Can clear=Yes
+        [21573.909902] 7  Process Posted Interrupts: Can set=No, Can clear=Yes
+        [21573.909902] Printing Processor-Based VM-Execution Controls...
+        [21573.909904] Primary Processor-Based VM-Execution Controls MSR: 0xf7b9fffe0401e172
+        [21573.909905] 2  Interrupt-Window Exiting: Can set=Yes, Can clear=Yes
+        [21573.909905] 3  Use TSC Offsetting: Can set=Yes, Can clear=Yes
+        [21573.909906] 7  HLT Exiting: Can set=Yes, Can clear=Yes
+        [21573.909907] 9  INVLPG Exiting: Can set=Yes, Can clear=Yes
+        [21573.909907] 10  MWAIT Exiting: Can set=Yes, Can clear=Yes
+        [21573.909908] 11  RDPMC Exiting: Can set=Yes, Can clear=Yes
+        [21573.909908] 12  RDTSC Exiting: Can set=Yes, Can clear=Yes
+        [21573.909909] 15  CR3-Load Exiting: Can set=Yes, Can clear=No
+        [21573.909910] 16  CR3-Store Exiting: Can set=Yes, Can clear=No
+        [21573.909910] 17  Activate Tertiary Controls: Can set=No, Can clear=Yes
+        [21573.909911] 19  CR8-Load Exiting: Can set=Yes, Can clear=Yes
+        [21573.909911] 20  CR8-Store Exiting: Can set=Yes, Can clear=Yes
+        [21573.909912] 21  Use TPR Shadow: Can set=Yes, Can clear=Yes
+        [21573.909913] 22  NMI-Window Exiting: Can set=No, Can clear=Yes
+        [21573.909913] 23  MOV-DR Exiting: Can set=Yes, Can clear=Yes
+        [21573.909914] 24  Unconditional I/O Exiting: Can set=Yes, Can clear=Yes
+        [21573.909915] 25  Use I/O Bitmaps: Can set=Yes, Can clear=Yes
+        [21573.909915] 27  Monitor Trap Flag: Can set=No, Can clear=Yes
+        [21573.909916] 28  Use MSR Bitmaps: Can set=Yes, Can clear=Yes
+        [21573.909916] 29  MONITOR Exiting: Can set=Yes, Can clear=Yes
+        [21573.909917] 30  PAUSE Exiting: Can set=Yes, Can clear=Yes
+        [21573.909918] 31  Activate Secondary Controls: Can set=Yes, Can clear=Yes
+        [21573.909918] Printing Secondary Processor-Based VM-Execution Controls...
+        [21573.909919] Secondary Processor-Based VM-Execution Controls MSR: 0x51ff00000000
+        [21573.909920] 0  Virtualize APIC Accesses: Can set=Yes, Can clear=Yes
+        [21573.909921] 1  Enable EPT: Can set=Yes, Can clear=Yes
+        [21573.909921] 2  Descriptor-Table Exiting: Can set=Yes, Can clear=Yes
+        [21573.909922] 3  Enable RDTSCP: Can set=Yes, Can clear=Yes
+        [21573.909922] 4  Virtualize x2APIC Mode: Can set=Yes, Can clear=Yes
+        [21573.909923] 5  Enable VPID: Can set=Yes, Can clear=Yes
+        [21573.909923] 6  WBINVD Exiting: Can set=Yes, Can clear=Yes
+        [21573.909924] 7  Unrestricted Guest: Can set=Yes, Can clear=Yes
+        [21573.909924] 8  APIC-Register Virtualization: Can set=Yes, Can clear=Yes
+        [21573.909925] 9  Virtual-Interrupt Delivery: Can set=No, Can clear=Yes
+        [21573.909926] 10  PAUSE-Loop Exiting: Can set=No, Can clear=Yes
+        [21573.909926] 11  RDRAND Exiting: Can set=No, Can clear=Yes
+        [21573.909927] 12  Enable INVPCID: Can set=Yes, Can clear=Yes
+        [21573.909927] 13  Enable VM Functions: Can set=No, Can clear=Yes
+        [21573.909928] 14  VMCS Shadowing: Can set=Yes, Can clear=Yes
+        [21573.909928] 15  Enable ENCLS Exiting: Can set=No, Can clear=Yes
+        [21573.909929] 16  RDSEED Exiting: Can set=No, Can clear=Yes
+        [21573.909929] 17  Enable PML: Can set=No, Can clear=Yes
+        [21573.909930] 18  EPT-Violation #VE: Can set=No, Can clear=Yes
+        [21573.909930] 19  Conceal VMX From PT: Can set=No, Can clear=Yes
+        [21573.909931] 20  Enable XSAVES/XRSTORS: Can set=No, Can clear=Yes
+        [21573.909932] 22  Mode-Based Execute Control For EPT: Can set=No, Can clear=Yes
+        [21573.909932] 23  Sub-Page Write Permissions For EPT: Can set=No, Can clear=Yes
+        [21573.909933] 24  Intel PT Uses Guest Physical Addresses: Can set=No, Can clear=Yes
+        [21573.909933] 25  Use TSC Scaling: Can set=No, Can clear=Yes
+        [21573.909934] 26  Enable User Wait And Pause: Can set=No, Can clear=Yes
+        [21573.909935] 27  Enable PCONFIG: Can set=No, Can clear=Yes
+        [21573.909935] 28  Enable ENCLV Exiting: Can set=No, Can clear=Yes
+        [21573.909936] Tertiary Processor-Based VM-Execution Controls Printing Is Skiped As It Is Not Activated...
+        [21573.909936] Printing VM-Exit Controls...
+        [21573.909938] VM-Exit Controls MSR: 0x3fefff00036dff
+        [21573.909938] 2  Save Debug Controls: Can set=Yes, Can clear=No
+        [21573.909939] 9  Host Address-Space Size: Can set=Yes, Can clear=Yes
+        [21573.909940] 12  Load IA32_PERF_GLOBAL_CTRL: Can set=No, Can clear=Yes
+        [21573.909940] 15  Acknowledge Interrupt On Exit: Can set=Yes, Can clear=Yes
+        [21573.909941] 18  Save IA32_PAT: Can set=Yes, Can clear=Yes
+        [21573.909941] 19  Load IA32_PAT: Can set=Yes, Can clear=Yes
+        [21573.909942] 20  Save IA32_EFER: Can set=Yes, Can clear=Yes
+        [21573.909943] 21  Load IA32_EFER: Can set=Yes, Can clear=Yes
+        [21573.909943] 22  Save VMX-Preemption Timer Value: Can set=No, Can clear=Yes
+        [21573.909944] 23  Clear IA32_BNDCFGS: Can set=No, Can clear=Yes
+        [21573.909945] 24  Conceal VMX from PT: Can set=No, Can clear=Yes
+        [21573.909945] 25  Clear IA32_RTIT_CTL: Can set=No, Can clear=Yes
+        [21573.909946] 26  Clear IA32_LBR_CTL: Can set=No, Can clear=Yes
+        [21573.909946] 28  Load CET State: Can set=No, Can clear=Yes
+        [21573.909947] 29  Load PKRS: Can set=No, Can clear=Yes
+        [21573.909947] 30  Save IA32_PERF_GLOBAL_CTL: Can set=No, Can clear=Yes
+        [21573.909948] 31  Activate Secondary Controls: Can set=No, Can clear=Yes
+        [21573.909948] Printing VM-Entry Controls...
+        [21573.909950] VM-Entry Controls: 0xd3ff000011ff
+        [21573.909950] 2  Load Debug Controls: Can set=Yes, Can clear=No
+        [21573.909951] 9  IA-32e Mode Guest: Can set=Yes, Can clear=Yes
+        [21573.909951] 10  Entry To SMM: Can set=No, Can clear=Yes
+        [21573.909952] 11  Deactivate Dualmonitor Treatment: Can set=No, Can clear=Yes
+        [21573.909953] 13  Load IA32_PERF_GLOBA L_CTRL: Can set=No, Can clear=Yes
+        [21573.909953] 14  Load IA32_PAT: Can set=Yes, Can clear=Yes
+        [21573.909954] 15  Load IA32_EFER: Can set=Yes, Can clear=Yes
+        [21573.909954] 16  Load IA32_BNDCFGS: Can set=No, Can clear=Yes
+        [21573.909955] 17  Conceal VMX From PT: Can set=No, Can clear=Yes
+        [21573.909955] 18  Load IA32_RTIT_CTL: Can set=No, Can clear=Yes
+        [21573.909956] 20  Load CET State: Can set=No, Can clear=Yes
+        [21573.909956] 21  Load Guest IA32_LBR_CTL: Can set=No, Can clear=Yes
+        [21573.909957] 22  Load PKRS: Can set=No, Can clear=Yes
+
+        If you see something like this pop out from you kernel debug message, you should be good to go! :D
+

@@ -247,7 +247,7 @@ detect_vmx_features(void)
 	report_capability(pin_based_exe_ctls, 5, lo, hi);
 
 	/* Processor-Based VM-Execution Controls - Primary (22) */
-	printk(KERN_INFO "Printing Processor-Based VM-Execution Controls... \n");
+	printk(KERN_INFO "Printing Primary Processor-Based VM-Execution Controls... \n");
 	rdmsr(IA32_VMX_PROCBASED_CTLS, lo, hi);
 	pr_info("Primary Processor-Based VM-Execution Controls MSR: 0x%llx\n",
 		(uint64_t)(lo | (uint64_t)hi << 32));
