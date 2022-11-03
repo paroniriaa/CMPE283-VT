@@ -7,7 +7,7 @@
 #include <linux/kernel.h>	/* Needed for KERN_INFO */
 #include <asm/msr.h>
 
-#define MAX_MSG 80
+#define MAX_MSG 128
 
 /*
  * Model specific registers (MSRs) by the module.
@@ -220,8 +220,9 @@ report_capability(struct capability_info *cap, uint8_t len, uint32_t lo,
 
 	for (i = 0; i < len; i++) {
 		c = &cap[i];
-		snprintf(msg, 79, "  %s: Can set=%s, Can clear=%s\n",
-		    c->name,
+		snprintf(msg, 127, "%d  %s: Can set=%s, Can clear=%s\n",
+		    c->bit,
+			c->name,
 		    (hi & (1 << c->bit)) ? "Yes" : "No",
 		    !(lo & (1 << c->bit)) ? "Yes" : "No");
 		printk(msg);
