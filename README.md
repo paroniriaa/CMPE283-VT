@@ -26,6 +26,7 @@ Refer to [A1 Instruction](A1/283_Assignment1-F22.pdf) for detailed info and inst
 
 ### A1 Result Demenstration
 (check out [A1 screenshots](A1/screenshots/) for more)
+![final-GCP-VM-SSH](A1/screenshots/VM-SSH.jpg)
 ![final-MSRs-0](A1/screenshots/VM-Fianl-MSR-0.jpg)
 ![final-MSRs-1](A1/screenshots/VM-Fianl-MSR-1.jpg)
 ![final-MSRs-2](A1/screenshots/VM-Fianl-MSR-2.jpg)
