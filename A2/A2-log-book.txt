@@ -1,0 +1,534 @@
+---CRITICAL NOTE---
+All commands listed here are done in a Linux(Ubunto) machine, so try to modify some steps/elements if you are using Windows/Mac.
+
+
+0. (Optional) You can first download and install GCP CLI tools:
+        Check out https://cloud.google.com/sdk/docs/install to install it. 
+
+1. Set up free billing account using the Google Cloud Education Credit Coupon 
+        Note: Much thanks to Prof. Mike Larkin and GCP Education Team, you guys are great! :D
+
+2. Create new project named CMPE-283, and connect it with the billing account created in step 1.
+
+3. Enable Computer Engine API, wait for its initializiation to be done.
+
+4. Configure VM Intance on GCP:
+        Go to GCP -> Compute Engine -> Virtual Machines -> VM instances -> Create instance:
+        Name: Instance-1
+        Region: us-west1(Oregon)
+        Zone: us-west1-a
+        Series: N2
+        Machine type: n2-standard-4 (4 vCPU, 16GB memory)
+        Boot disk:
+                Public Images:
+                        Operating System: Ubuntu
+                        Version: Ubuntu 22.04 LTS (x86/64, amd64 jammy image built on 2022-12-01, supports Shielded VM features)
+                        Boot Disk Type: SSD persistent disk
+                        Size: 150 (CRITICAL: 150GB is not a must have, but you do need HUGE space for building the linux kernel, so go for the MAX you can do)
+        Identity and API access: Compute Engine default service account
+        Access scopes: Allow default access
+        Firewall: Allow HTTP/HTTPS traffic
+        Note:
+                Nested Virtualization: True -> this need to be done using command line
+                Min Cpu Platform: "Intel Cascade Lake" -> this need to be done using command line
+
+5. You can save (not run) the scripts for creating a GCP VM(click on equivalent command line):
+        # run gcloud commands either on your machine's shell or GCP's cloud shell
+        gcloud compute instances create instance-1 --project=<gcp-project-id> --zone=us-west1-a --machine-type=n2-standard-4 --network-interface=network-tier=PREMIUM --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=558940717781-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance-1,image=projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221201,mode=rw,size=150,type=projects/<gcp-project-id>/zones/us-west1-a/diskTypes/pd-ssd --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any --enable-nested-virtualization --min-cpu-platform="Intel Cascade Lake"
+
+6. Run the VM generation script on step 5 and create the desired VM on GCP:
+        # located A2/scripts/, modify it before you use
+        bash gcp-create-vm.sh:
+                gcloud auth login
+
+                gcloud config set project <gcp-project-id>
+
+                gcloud compute instances create instance-1 --project=<gcp-project-id> --zone=us-west1-a --machine-type=n2-standard-4 --network-interface=network-tier=PREMIUM --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=558940717781-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance-1,image=projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221201,mode=rw,size=150,type=projects/<gcp-project-id>/zones/us-west1-a/diskTypes/pd-ssd --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any --enable-nested-virtualization --min-cpu-platform="Intel Cascade Lake"
+
+7. Generate public and private SSH-KEY:
+        # you should run this only one time, then copy your ssh key
+        # located A2/scripts/, modify it before you use
+        bash gcp-gen-ssh.sh:       
+                # define $USER if needed
+
+                ssh-keygen -t rsa -f ~/.ssh/google_cloud_key -C $USER
+                
+                cat /home/$USER/.ssh/google_cloud_key.pub
+        
+        Note: If you have terminated a VM in GCP which happends to have the same external IP address to the VM that you just create
+                you will run into host authenticity failuae which blocks you from establishing the SSH connection between your
+                machine and the host -> because GCP reused the same IP but different ECDSA key fingerprint(public key) for 
+                different VM, so your known host info recorded in your .ssh/known_hosts has a mismatch (GCP should really fix it....)
+        Sol: re-create your SSH KEY using the gcp-gen-ssh.sh, do step 8 to add the fresh SSH key and delete the old SSH key, then
+                you should be good to go (but the price is thatyou will need to add all the host info again when connecting :C)
+                Also, remove your known host in your machine:
+                ssh-keygen -f "/home/<your-account>/.ssh/known_hosts" -R "<VM-external-IP>"
+
+8. Save the generated SSH public key to GCP VM Metadata:
+        Go to GCP -> Compute Engine -> Settings -> Metadata -> SSH Keys -> Add Item ->
+                # the format should looks like the following
+                Username: <your name> (it will get auto generated)
+                Key: ssh-sra AAAA.....XfGI0= <your name> (just copy from ssh-sra...to the end)
+
+9. Connecte to default VM instance-1 in GCP:
+        # located A2/scripts/, modify it before you use 
+        bash gcp-ssh-vm.sh -e  -e <vm-external-IP>
+                # define $USER if needed 
+                        
+                while getopts e: flag; do
+                        case "${flag}" in
+                        e) EXTERNAL_IP=${OPTARG} ;;
+                        esac
+                done
+
+                echo "Connecting to VM $USER@$EXTERNAL_IP in GCP using ssh..."
+
+                ssh -i ~/.ssh/google_cloud_key $USER@$EXTERNAL_IP
+
+10. Clone the Course GitHub Repo to the VM:
+        #check screenshots/VM-gcp-ssh-vm.jpg
+        #check screenshots/VM-info(uname-df-nested).jpg
+        # Your GitHub Repo should contains the initial files that provided by Prof. Mike Larkin:
+                # 283_Assignment1-F22.pdf, cmpe283-1.c, Makefile
+        # your https-based GitHub Repo looks like this: https://github.com/paroniriaa/CMPE283-VT.git
+        git clone <your https-based GitHub Repo>
+
+11. Install necessary compilation tools:
+        sudo apt-get update
+        sudo apt-get install gcc
+        sudo apt-get install make
+        sudo apt-get install flex
+        sudo apt-get install bison
+        sudo apt-get install libssl-dev
+        sudo apt-get install libelf-dev
+
+        #This line of command may not necessary work as $(uname -r) does not guarantee to give the 'right' version for your linux-headers(such as WSL)
+        sudo apt-get install linux-headers-$(uname -r)
+        
+        # If failed, try to use the following to find the right version of linux header for your machine
+                apt search linux-headers
+                ls -l /usr/src/linux-headers-$(uname -r)
+
+        #---CRITICAL NOTE---: 
+                If you are using WSL/WSL2, you will not be able to find the
+                coresspoinding linux header because the base WSL2 kernel does not 
+                allow modules to be loaded. You have to download, compile and use 
+                your own kernel build. 
+                For details, refer to https://unix.stackexchange.com/questions/594470/wsl-2-does-not-have-lib-modules
+                Also, here's the WSL2 kernel GitHub Repo https://github.com/microsoft/WSL2-Linux-Kernel
+
+12. (Optional) Install GitHub for ease of use when performing push/pull to the Course GitHub Repo
+        type -p curl >/dev/null || sudo apt install curl -y
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+&& sudo apt update \
+&& sudo apt install gh -y
+
+13. (Optional) Login to the GitHub account for avoiding multiple auth promots when performing push/pull:
+        gh auth login
+        ? What account do you want to log into? GitHub.com
+        ? What is your preferred protocol for Git operations? HTTPS
+        ? Authenticate Git with your GitHub credentials? Yes
+        ? How would you like to authenticate GitHub CLI? Login with a web browser
+
+14. (Optional) Install GPG for GPG key export and commit signature:
+        sudo apt-get install gnupg
+        gpg --list-keys 
+        gpg --full-generate-key 
+                RSA and RSA (default)
+                4096
+                1y
+                Y 
+                <your name> 
+                <your email> 
+                <your password>
+                <your password again>
+        gpg --list-keys 
+        gpg --export --armor <your email>
+        gpg --export --armor --output <some file name>.gpg.pub <your email>
+
+15. (Optional) Configure Git global proerites for auto sign using GPG key when commit:
+        git config --global user.name <your name>
+        git config --global user.email <your email>
+        gpg --list-secret-keys --keyid-format=long
+                #sec   rsa4096/<your-private-key> 
+        git config --global gpg.program gpg
+        git config --global user.signingKey your-private-key 
+        git config --global commit.gpgsign true
+        git config --global --list
+
+        # commit your code by the following
+        git add -A 
+        git status
+        git commit -m "<your commmit message>"
+        git push
+
+        Note: 
+        you might encounter errors like:
+                error: gpg failed to sign the data
+                fatal: failed to write commit object
+        you can fix it by:
+                export GPG_TTY=$(tty)
+        you might want to make it auto export whenever you initialize your bash
+        so you dont have to do it every time by yourself:
+                modify ~/.zshrc:
+                        GPG_TTY=$(tty)
+                        export GPG_TTY
+
+        # check your signed/unsigne log history ezily
+        git log --pretty="format:%h %G? %aN  %s"
+        
+        Note: 
+        In case you mess up something, dont worry, heres a trick for you to revoke commit using git:
+                #n is the number of commits you wanna revokes
+                git reset --soft HEAD~n
+                git push origin +main --force
+        In case you mess up on some branch and want to force sync your local branch with the current main branch:        
+                git reset --hard origin/main
+
+16. (CRTICAL) check if the current VM has the nested virtualization functionailities:
+        #check screenshots/VM-cpuinfo-0~4.jpg
+        #check screenshots/VM-lscpu-0~1.jpg
+        Note: This is very very important, make sure you check it, otherwise all your following works will not be valid :C
+                If you strictly followed my gcp-create-vm.sh shell script, you should be fine, as we explictly configured that
+                '--enable-nested-virtualization' when creating the VM. Still, we need to double check:
+        We can check using the following command:
+       
+        cat /proc/cpuinfo
+
+        It will show detail cpu info for your machine, but we only care about the field 'vmx flags', so if you find it present
+        in the cpuinfo, you are good to go.
+
+        cat /proc/cpuinfo
+                processor       : 0
+                vendor_id       : GenuineIntel
+                cpu family      : 6
+                model           : 85
+                model name      : Intel(R) Xeon(R) CPU @ 2.80GHz
+                stepping        : 7
+                microcode       : 0x1
+                cpu MHz         : 2800.296
+                cache size      : 33792 KB
+                physical id     : 0
+                siblings        : 4
+                core id         : 1
+                cpu cores       : 2
+                apicid          : 3
+                initial apicid  : 3
+                fpu             : yes
+                fpu_exception   : yes
+                cpuid level     : 13
+                wp              : yes
+                flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch invpcid_single ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat avx512_vnni md_clear arch_capabilities
+        --->    vmx flags       : vnmi invvpid flexpriority tsc_offset vtpr vapic ept vpid unrestricted_guest vapic_reg shadow_vmcs
+                bugs            : spectre_v1 spectre_v2 spec_store_bypass mds swapgs taa mmio_stale_data retbleed eibrs_pbrsb
+                bogomips        : 5600.59
+                clflush size    : 64
+                cache_alignment : 64
+                address sizes   : 46 bits physical, 48 bits virtual
+                power management:
+
+        based on GCP specification, you can also confirm the nested virtualization using another command:
+        grep -cw vmx /proc/cpuinfo
+                8
+                any output other than 0 indicated that the nested virtualization capibility is enabled
+
+        if you want, you can check the amount of disk space available on the filesystem with each file name's argument:
+        
+        df -h
+                Filesystem      Size  Used Avail Use% Mounted on
+                /dev/root       9.6G  2.2G  7.4G  23% /
+                tmpfs           3.9G     0  3.9G   0% /dev/shm
+                tmpfs           1.6G  928K  1.6G   1% /run
+                tmpfs           5.0M     0  5.0M   0% /run/lock
+                /dev/sda15      105M  5.3M  100M   5% /boot/efi
+                tmpfs           795M  4.0K  795M   1% /run/user/1001
+
+
+17. Note that we actually skiped the requirement for 'download and build the Linux kernel source code' during A1,
+so now we need to do it for the right configuration and envirnment for A2 and A3
+        #check screenshots/VM-clone-linux-kernel.jpg
+        Note: I took CMPE 283 during the Fall 2022 semester, and Prof. Mike Larkin did not make the requirement
+                (that i mentioned above) to be mandatoary during A1, but yours may be differnt, so you need to
+                double check, otherwise you may loose points :C.
+        First, go to https://github.com/torvalds/linux, fork the repo to your account, and clone it on your VM:
+
+        cd ~
+        git clone https://github.com/<your-github-account>/linux.git
+        cd linux
+        git status
+        git remote -v
+
+18. The forked linux kernel may not be buildable as its not yet correctly configured for the current VM we are running,
+        #check screenshots/VM-cp-kernel-config-file.jpg
+        
+        so we need to find the coresspoinding configuration file for it:
+        cd ~/linux 
+        uname -r
+                Note: my VM's kernel relase is '5.15.0-1025-gcp', yours might be differnt, 
+                mark it as you will need it for the next command
+        
+        cp /boot/config-5.15.0-1025-gcp ~/linux/.config
+                Note: if cp cannot find it, you need to find it yourself, cd to /boot and ls to check all available config file
+                and use the matched one
+        ls -la
+                total 1304
+                drwxrwxr-x  27 junjie junjie   4096 Dec  3 14:06 .
+                drwxr-x---   6 junjie junjie   4096 Dec  3 13:58 ..
+                -rw-rw-r--   1 junjie junjie  20349 Dec  3 14:05 .clang-format
+                -rw-rw-r--   1 junjie junjie     59 Dec  3 14:05 .cocciconfig
+        --->    -rw-r--r--   1 junjie junjie 261224 Dec  3 14:06 .config
+                -rw-rw-r--   1 junjie junjie    151 Dec  3 14:05 .get_maintainer.ignore
+                drwxrwxr-x   8 junjie junjie   4096 Dec  3 14:05 .git
+                -rw-rw-r--   1 junjie junjie     62 Dec  3 14:05 .gitattributes
+                -rw-rw-r--   1 junjie junjie   2046 Dec  3 14:05 .gitignore
+                -rw-rw-r--   1 junjie junjie  24982 Dec  3 14:05 .mailmap
+                -rw-rw-r--   1 junjie junjie    369 Dec  3 14:05 .rustfmt.toml
+                -rw-rw-r--   1 junjie junjie    496 Dec  3 14:05 COPYING
+                -rw-rw-r--   1 junjie junjie 101639 Dec  3 14:05 CREDITS
+                drwxrwxr-x  86 junjie junjie   4096 Dec  3 14:05 Documentation
+                -rw-rw-r--   1 junjie junjie   2573 Dec  3 14:05 Kbuild
+                -rw-rw-r--   1 junjie junjie    555 Dec  3 14:05 Kconfig
+                drwxrwxr-x   6 junjie junjie   4096 Dec  3 14:05 LICENSES
+                -rw-rw-r--   1 junjie junjie 688453 Dec  3 14:05 MAINTAINERS
+                -rw-rw-r--   1 junjie junjie  70613 Dec  3 14:05 Makefile
+                -rw-rw-r--   1 junjie junjie    727 Dec  3 14:05 README
+                drwxrwxr-x  24 junjie junjie   4096 Dec  3 14:05 arch
+                drwxrwxr-x   3 junjie junjie   4096 Dec  3 14:05 block
+                drwxrwxr-x   2 junjie junjie   4096 Dec  3 14:05 certs
+                drwxrwxr-x   4 junjie junjie   4096 Dec  3 14:05 crypto
+                drwxrwxr-x 139 junjie junjie   4096 Dec  3 14:05 drivers
+                drwxrwxr-x  83 junjie junjie   4096 Dec  3 14:05 fs
+                drwxrwxr-x  31 junjie junjie   4096 Dec  3 14:05 include
+                drwxrwxr-x   2 junjie junjie   4096 Dec  3 14:05 init
+                drwxrwxr-x   2 junjie junjie   4096 Dec  3 14:05 io_uring
+                drwxrwxr-x   2 junjie junjie   4096 Dec  3 14:05 ipc
+                drwxrwxr-x  22 junjie junjie   4096 Dec  3 14:05 kernel
+                drwxrwxr-x  22 junjie junjie  12288 Dec  3 14:05 lib
+                drwxrwxr-x   6 junjie junjie   4096 Dec  3 14:05 mm
+                drwxrwxr-x  71 junjie junjie   4096 Dec  3 14:05 net
+                drwxrwxr-x   6 junjie junjie   4096 Dec  3 14:05 rust
+                drwxrwxr-x  39 junjie junjie   4096 Dec  3 14:05 samples
+                drwxrwxr-x  17 junjie junjie   4096 Dec  3 14:05 scripts
+                drwxrwxr-x  14 junjie junjie   4096 Dec  3 14:05 security
+                drwxrwxr-x  27 junjie junjie   4096 Dec  3 14:05 sound
+                drwxrwxr-x  41 junjie junjie   4096 Dec  3 14:05 tools
+                drwxrwxr-x   4 junjie junjie   4096 Dec  3 14:05 usr
+                drwxrwxr-x   4 junjie junjie   4096 Dec  3 14:05 virt
+        
+        cat into it if you like, its hella long, all related to VM configuration :]
+
+19. build the linux kernel using the .config file we copied:
+        #check screenshots/VM-make-oldconfig.jpg
+        Note: if we have our .config file ready under the linux directory, the command 'make oldconfig' will take advantage of it and
+        only ask the questions that is not listed in it based on the release version of the linux kernel that we going to build
+
+        # (CRITICAL) install these essential tools before you make oldconfig, depends on your VM, you may need to install other needed tools, try to figure it out yourself :C
+        sudo apt-get build-essential
+        sudo apt-get kernel-package
+        sudo apt-get ccache 
+        sudo apt-get install flex
+        sudo apt-get install bison
+        sudo apt-get install libssl-dev
+        sudo apt-get install libelf-dev
+
+        make oldconfig
+                Note: even though we have our .config file, we still need to answer bunch of configuration questions, but luckily the oldconfig 
+                will figure out the default options for us, so we just need to press 'Enter' key all the way to the end :D 
+
+        (CRITICAL)Note: Before you build the modules, you may want to double check your .config file to change some content to prevent make modules from failing
+        
+        scripts/config --disable SYSTEM_TRUSTED_KEYS
+                Note: or change the value of 'CONFIG_SYSTEM_TRUSTED_KEYS' to ""
+                -> CONFIG_SYSTEM_TRUSTED_KEYS = ""
+        
+        scripts/config --disable SYSTEM_REVOCATION_KEYS
+                Note: or change the value of 'CONFIG_SYSTEM_REVOCATION_KEYS' to ""
+                -> CONFIG_SYSTEM_REVOCATION_KEYS = ""
+
+
+20. prepare the linux using make prepare command:
+        #check screenshots/VM-make-prepare.jpg
+        make prepare
+                Note: if you do everything correctly, there should be no errors and make should be successfully complete; if not, try to debug!
+                        (most likely is because you did not install all the needed tools)
+
+21. build all the modules that goes into the linux kernel:          
+        #check screenshots/VM-make-modules.jpg
+        make -j <your-vm-cpu-total-core-number> modules
+                Note: you can use more than one CPU core to build all the modules for linux kernel
+                        This is a process that would take EXTREAMLY long time to finish, so MAKE SURE you use all cores available, 
+                        otherwise you will regret...:C
+
+22. build the linux kernel itself:        
+        #check screenshots/VM-make-kernel-0.jpg
+        #check screenshots/VM-make-kernel-1.jpg
+        make -j <your-vm-cpu-total-core-number> 
+                Note: again, you can use more than one CPU core to build the linux kernel
+                and again, this is a process that would take EXTREAMLY long time to finish, so MAKE SURE you use all cores available, 
+                otherwise you will regret...:C
+
+
+23. after the modules and kernel is built, we can package them into a format that suitable for booting inside our VM
+        #check screenshots/VM-install-modules.jpg
+        sudo make -j <your-vm-cpu-total-core-number> INSTALL_MOD_STRIP=1 modules_install
+                Note: it takes too much space to package all modules indluding their debug info, so we will use INSTALL_MOD_STRIP=1
+                to strip all the debugging information off the modules while they are being installed, so it is more light-weight
+                for our linux kernel
+
+24. now we can finally install our fully-built linux kernel to our VM:
+        #check screenshots/VM-install-kernel.jpg
+        sudo make -j <your-vm-cpu-total-core-number> install
+        check 
+
+25. (CRITICAL) reboot the VM to have it boot the newly installed linux kernel:
+        #check screenshots/VM-before-reboot.jpg
+        sudo reboot
+        
+26. (CRITICAL) now connet back to the VM, use uname command to check if our newly installed linux kernel is loaded:
+        #check screenshots/VM-after-reboot.jpg
+        uname -a 
+
+
+27. (optional)Try compile and run the initial cmpe283-1.c code and check the boosted linux kernel output of MSR discovery(IA32_VMX_PINBASED_CTLS for now):
+        #check screenshots/VM-nested-kernal-test.jpg
+        
+        # the initial implementation of cmpe283-1.c should have included the discovery of IA32_VMX_PINBASED_CTLS
+        # if you are using my version of cmpe283-1.c, it would print the complete MSRs discovery
+        # welp we just gonna compile it and run it to make sure our working enviroment is compatible for A2 and A3
+
+        make clean
+        make all
+        # if you are using my version of Makefile (recommended)
+        make test
+
+        if everthing works fine, you should be able to see soemthing like this:
+        
+        # Display the kernel log
+        sudo dmesg
+        [  169.300446] cmpe283_1: loading out-of-tree module taints kernel.
+        [  169.300480] cmpe283_1: module verification failed: signature and/or required key missing - tainting kernel
+        [  169.300722] CMPE 283 Assignment 1 Module Start
+        [  169.300723] Printing Pin-Based VM-Execution Controls...
+        [  169.300725] Pin-Based VM-Execution Controls MSR: 0x3f00000016
+        [  169.300727] 0  External-Interrupt Exiting: Can set=Yes, Can clear=Yes
+        [  169.300728] 3  NMI Exiting: Can set=Yes, Can clear=Yes
+        [  169.300729] 5  Virtual NMIs: Can set=Yes, Can clear=Yes
+        [  169.300730] 6  Activate VMX-Preemption Timer: Can set=No, Can clear=Yes
+        [  169.300731] 7  Process Posted Interrupts: Can set=No, Can clear=Yes
+        [  169.300731] Printing Primary Processor-Based VM-Execution Controls...
+        (continue to print...)
+
+        If you see the info printed aboves, great, now we can actually start our A2/A3 (I dont know about you but I'm half dead already...:CCC)
+
+
+28. to make changes in the kvm hypervisor, we first need to nevigate to 'arch' directory,
+    then check both kvm.c and cpuid.c:
+    
+    cd ~/linux/arch/x86/kvm
+    ls
+
+    cpuid.c is what we are looking for here
+
+    Note: this is not related to the A2/A3, but you will see directory 'vmx' and 'svm' here, 
+    which corressponding to intel brand and amd brand cpu, and we can check vmx/vmx.c to see
+    how intel handle the vm exit:
+        vim cmx.c 
+        /handle_exit
+        /kvm_emulate_cpuid
+            Note: you will notice that kvm_emulate_cpuid does not defined here, then it must be difined somewhere else, lets find it!
+        :qa
+        cd ..
+        grep -R kvm_emulate_cpuid *
+            Note: you will see that both CPU brands pass the exit handle to cpuid.c for kvm_emulate_cpuid, so lets take a closer look.
+        vim cpuid.c
+            Note: there we go! function -> int kvm_emulate_cpuid(struct kvm_vcpu *cpu) is the main character that we are looking for in A2/A3,
+                which handles all the kvm cpuid exit 
+
+
+
+2. now, following the requirements in the A2/A3 instructions, we will be modifing the CPUID emulation code in KVM to report back additional information
+when special CPUID leaf nodes are requested:
+    A2:
+        %eax=0x4FFFFFFC -> Return the total number of exits (all types) in %eax
+        
+        %eax=0x4FFFFFFD -> Return the high 32 bits of the total time spent processing all exits in %ebx
+                            Return the low 32 bits of the total time spent processing all exits in %ecx 
+                            Note: %ebx and %ecx return values are measured in processor cycles, across all VCPUs
+    A3:
+        %eax=0x4FFFFFFE -> Return the number of exits for the exit number provided (on input) in %ecx
+                            Note: This value should be returned in %eax
+        
+        %eax=0x4FFFFFFF -> Return the time spent processing the exit number provided (on input) in %ecx
+                            Note: Return the high 32 bits of the total time spent for that exit in %ebx
+                                    Return the low 32 bits of the total time spent for that exit in %ecx
+        
+
+        (CRITICAL)Note: For leaf nodes 0x4FFFFFFE and 0x4FFFFFFF, if %ecx (on input) contains a value not defined by the
+                        SDM, return 0 in all %eax, %ebx, %ecx registers and return 0xFFFFFFFF in %edx. For exit types not
+                        enabled in KVM, return 0s in all four registers.
+
+                        In other words, when dealing A3:
+                        -> if the value of %ecx is not in the valid range: %eax = %ebx = %ecx = 0, %edx = 0xFFFFFFFF
+                        -> if the exit types not enabled in KVM -> %eax = %ebx = %ecx = %edx = 0
+
+
+        Note: For the exit number provided in %ecx, we can check each of the supported number and its indicator in the textbook
+                -> Combined Volume Set of Intel® 64 and IA-32 Architectures Software Developers Manuals
+                -> Volume 3 (3A, 3B, 3C & 3D): System Programming Guide
+                -> Appendix C VMX Basic Exit Reasons 
+                -> Table C-1. Basic Exit Reasons (page 4285)
+
+                Notice that some of the basic exit reaosn number does not exit, for example, 35, etc
+                In other words:
+                -> The valid range for %ecx: 0~34, 36~37, 39~41, 43~69
+                -> The invalid range for %ecx: 35, 38, 42, N>69
+
+
+
+-----Temp-----
+
+cpuid.c ->
+int kvm_emulate_cpuid(struct kvm_vcpu *cpu) {
+...
+extern u32 total_exits;
+
+...
+KVM_CPUID();
+if (eax == 0x4FFFFFFC) {
+    // DO something
+    eax = total_exits;
+}
+}
+
+
+vmx.c ->
+u32 total_exits;
+int__vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath){
+    ...
+    u16 exit_handler_index;
+
+    total_exits++;
+    //inc total_exits;
+}
+
+
+sudo make -j 8 modules
+sudo make -j 8 INSTALL_MOD_STRIP=1 modules_install && make install
+
+21:30
+lsmod | grep kvm
+rmmod kvm
+rmmod kvm_intel
+lsmod | grep kvm
+modprobe kvm
+lsmod | grep kvm
+modprobe kvm_intel
+lsmod | grep kvm
+
+
+sudo apt-get install qemu-kvm 
+sudo apt-get install libvirt-bin 
+sudo apt-get install bridge-utils 
+sudo apt-get install virt-manager
