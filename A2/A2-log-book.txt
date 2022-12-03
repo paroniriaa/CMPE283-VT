@@ -325,9 +325,9 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
         only ask the questions that is not listed in it based on the release version of the linux kernel that we going to build
 
         # (CRITICAL) install these essential tools before you make oldconfig, depends on your VM, you may need to install other needed tools, try to figure it out yourself :C
-        sudo apt-get build-essential
-        sudo apt-get kernel-package
-        sudo apt-get ccache 
+        sudo apt-get install build-essential
+        sudo apt-get install kernel-package
+        sudo apt-get install ccache 
         sudo apt-get install flex
         sudo apt-get install bison
         sudo apt-get install libssl-dev
@@ -446,9 +446,13 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
             Note: there we go! function -> int kvm_emulate_cpuid(struct kvm_vcpu *cpu) is the main character that we are looking for in A2/A3,
                 which handles all the kvm cpuid exit 
 
+29. before we do anything to change the content of kvm.c and cpuid.c, let's save the original copy for furture reference and comparison purpose:
+        cp ~/linux/arch/x86/kvm/cpuid.c ~/CMPE283-VT/A2/source/cpuid.origin.c  
+        diff ~/linux/arch/x86/kvm/cpuid.c ~/CMPE283-VT/A2/source/cpuid.origin.c  
+        cp ~/linux/arch/x86/kvm/vmx/vmx.c ~/CMPE283-VT/A2/source/vmx.origin.c
+        diff ~/linux/arch/x86/kvm/vmx/vmx.c ~/CMPE283-VT/A2/source/vmx.origin.c
 
-
-2. now, following the requirements in the A2/A3 instructions, we will be modifing the CPUID emulation code in KVM to report back additional information
+30. now, following the requirements in the A2/A3 instructions, we will be modifing the CPUID emulation code in KVM to report back additional information
 when special CPUID leaf nodes are requested:
     A2:
         %eax=0x4FFFFFFC -> Return the total number of exits (all types) in %eax
@@ -486,6 +490,136 @@ when special CPUID leaf nodes are requested:
                 -> The invalid range for %ecx: 35, 38, 42, N>69
 
 
+31. let's modify ~/linux/arch/x86/kvm/vmx/vmx.c first for A2 requirement:
+        ...
+        //extern gloabl u32 variable for recording total number of exits
+        extern u32 total_exits_counter;
+        //extern gloabl uint64_t variable for recording total number of cpu cycles on exits
+        extern uint64_t total_cup_cycles_counter;
+
+        static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
+        {
+                // local uint64_t variables for record the beginning and the ending of processor's time stamp counter 
+                uint64_t begin_time_stamp_counter, end_time_stamp_counter;
+                // local int variable to store the return status of exit handler
+                int exit_handler_status;
+
+                struct vcpu_vmx *vmx = to_vmx(vcpu);
+                ...
+                ...
+                if (!kvm_vmx_exit_handlers[exit_handler_index])
+                goto unexpected_vmexit;
+
+                // atomically increase by 1 for every exit
+                arch_atomic_inc(&total_exits_counter);
+                // record the beginning of processor's time stamp counter 
+                begin_time_stamp_counter = rdtsc();
+                // call the corressponding exit handler to handle the exit
+                exit_handler_status = kvm_vmx_exit_handlers[exit_handler_index](vcpu);
+                // record the ending of processor's time stamp counter
+                end_time_stamp_counter = rdtsc();
+                // atomically compute the current time stamp gap and add it to the total processor cycle time
+	        arch_atomic64_add((end_time_stamp_counter - begin_time_stamp_counter), &total_cup_cycles_counter);
+
+                return exit_handler_status
+
+        unexpected_vmexit:
+        ...
+        }
+
+32. then modify ~/linux/arch/x86/kvm/cpuid.c for A2 requirement:
+        //volatile int counter for total_exits_counter, atomically initialize to 0
+        atomic_t total_exits_counter = ATOMIC_INIT(0);
+        //export the variable total_exits_counter so vmx.c can use it
+        EXPORT_SYMBOL(total_exits_counter);
+        
+        //volatile int64 counter for total_cup_cycles_counter, atomically initialize to 0
+        atomic64_t total_cup_cycles_counter = ATOMIC64_INIT(0);
+        //export the variable total_cup_cycles_counter so vmx.c can use it
+        EXPORT_SYMBOL(total_cup_cycles_counter);
+        
+        int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
+        {
+                //uint64_t variable for recording total number of cpu cycles on exits
+                uint64_t total_cup_cycles;
+                u32 eax, ebx, ecx, edx;
+                ...
+                ...
+                eax = kvm_rax_read(vcpu);
+	        ecx = kvm_rcx_read(vcpu);
+
+                // check special new CPUID leaf that defined in A2
+                switch(eax) {
+                        // case %eax = 0x4FFFFFFC
+                        case 0x4FFFFFFC:
+                                eax = arch_atomic_read(&total_exits_counter);
+                                break;
+
+                        // case %eax = 0x4FFFFFFD
+                        case 0x4FFFFFFD:
+                                total_cup_cycles = arch_atomic64_read(&total_cup_cycles_counter);
+                                //the high 32 bits of the total time spent processing all exits store in %ebx
+                                ebx = (total_cup_cycles >> 32);;	
+                                //the low 32 bits of the total time spent processing all exits store in %ecx
+                                ecx = (total_cup_cycles & 0xffffffff); 
+                                break; 
+
+                        // default case for all other %eax value
+                        default:
+                                kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
+                }
+
+                kvm_rax_write(vcpu, eax);
+                ...
+        }
+
+33. go back to the top level of ~/linux to build and install the modules again, then install the kernel:
+        make -j <your-vm-cpu-total-core-number> modules
+        sudo make -j <your-vm-cpu-total-core-number> INSTALL_MOD_STRIP=1 modules_install && make install
+        sudo lsmod | grep kvm
+        sudo rmmod kvm_intel
+        sudo rmmod kvm
+        sudo modprobe kvm
+        sudo modprobe kvm_intel
+        sudo lsmod | grep kvm
+
+34. if there is no error, then we are ready to create a inner VM inside our current VM,
+but first we need to intall some extra tools for KVM, then check kvm-ok, and reboot:
+        sudo apt-get install cpu-checker
+        sudo apt update
+        sudo apt-get install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+        sudo kvm-ok
+        sudo reboot
+
+
+35. now we need to authorize a vm users for the inner VM, and verify our VM functionailities: 
+        uname -a
+        sudo adduser '<your-name>' libvirt
+                Note: you can check all your libvirt usser using the following command:
+                        sudo getent group | grep libvirt
+        sudo adduser '<your-name>' kvm
+                Note: you can check all your kvm usser using the following command:
+                sudo getent group | grep kvm
+        sudo virsh list --all
+                Note: it should show an empty list
+        sudo systemctl status libvirtd
+                Note: if everything is functioning properly, the output returns an active (running) status.
+                        if it is not activate, do the following command to activate it
+                        sudo systemctl enable --now libvirtd
+
+36. okay! we can create our inner VM now, using virt-manager:
+        sudo apt install virt-manager
+        cd ~
+        wget https://releases.ubuntu.com/jammy/ubuntu-22.04.1-desktop-amd64.iso
+        cp ~/ubuntu-22.04.1-desktop-amd64.iso /var/lib/libvirt/images/
+
+
+virsh list --all
+virsh shutdown Fedora02
+virsh start Fedora02
+virsh destroy Fedora02
+
+
 
 -----Temp-----
 
@@ -518,14 +652,14 @@ sudo make -j 8 modules
 sudo make -j 8 INSTALL_MOD_STRIP=1 modules_install && make install
 
 21:30
-lsmod | grep kvm
-rmmod kvm
-rmmod kvm_intel
-lsmod | grep kvm
-modprobe kvm
-lsmod | grep kvm
-modprobe kvm_intel
-lsmod | grep kvm
+sudo lsmod | grep kvm
+sudo rmmod kvm_intel
+sudo rmmod kvm
+sudo lsmod | grep kvm
+sudo modprobe kvm
+sudo lsmod | grep kvm
+sudo modprobe kvm_intel
+sudo lsmod | grep kvm
 
 
 sudo apt-get install qemu-kvm 
