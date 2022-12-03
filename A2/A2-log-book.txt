@@ -611,8 +611,8 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
         sudo apt install virt-manager
         cd ~
         wget https://releases.ubuntu.com/jammy/ubuntu-22.04.1-desktop-amd64.iso
-        cp ~/ubuntu-22.04.1-desktop-amd64.iso /var/lib/libvirt/images/
-
+        mv ~/ubuntu-22.04.1-desktop-amd64.iso /var/lib/libvirt/images/
+        bash virt-install-vm.sh
 
 virsh list --all
 virsh shutdown Fedora02

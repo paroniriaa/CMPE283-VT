@@ -12,4 +12,4 @@ type="--virt-type=kvm"
 network="--network=default"
 graphics="--graphics=none"
 
-virt-install $os $network $disk $cdrom $cpu $ram $type $disk $graphics --name=$name
+virt-install $name $os $disk $cdrom $cpu $ram $type $disk $graphics $network 
