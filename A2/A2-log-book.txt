@@ -613,11 +613,14 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
         wget https://releases.ubuntu.com/jammy/ubuntu-22.04.1-desktop-amd64.iso
         mv ~/ubuntu-22.04.1-desktop-amd64.iso /var/lib/libvirt/images/
         bash virt-install-vm.sh
+        virsh console ubuntu-vm
+
 
 virsh list --all
-virsh shutdown Fedora02
-virsh start Fedora02
-virsh destroy Fedora02
+virsh shutdown ubuntu-vm
+virsh start ubuntu-vm
+virsh destroy ubuntu-vm
+virsh undefine ubuntu-vm
 
 
 
