@@ -607,14 +607,163 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
                         if it is not activate, do the following command to activate it
                         sudo systemctl enable --now libvirtd
 
-36. okay! we can create our inner VM now, using virt-manager:
+
+36. now, we want to install some basic GUI functionailities on our VM for inner-vm interaction:
+        Note: I tried so many ways to interacter with the inner-VM using CLI only but failed,
+                if you figured out how to host a inner-VM inside of the current VM, do let me know! :d
+
+        Note: Assuming you are following my step and hosted your VM on GCP, we can utlize the GUI functionailities
+                supported by GCP (coooool)
+        sudo apt update
+        sudo apt install --assume-yes wget tasksel
+        wget https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb
+        sudo apt-get install --assume-yes ./chrome-remote-desktop_current_amd64.deb
+        sudo tasksel install ubuntu-desktop
+        sudo bash -c ‘echo “exec /etc/X11/Xsession /usr/bin/gnome-session” > /etc/chrome-remote-desktop-session’
+                Note: if it failed, its okay! :D
+        sudo apt-get install xbase-clients
+        sudo apt-get install python3-psutil
+        sudo apt --fix-broken install
+        sudo dpkg -i chrome-remote-desktop_current_amd64.deb
+        mkdir ~/.config/chrome-remote-desktop
+        exit
+
+37. to fully enable the GUI functionailities provided by GCP, we need to first stop our VM and check the visual support box:
+        Go to your GCP -> Compute Instance -> Stop the VM
+        give it a few moment to stop...
+        Then, go to your VM -> Edit -> Machine Configuration -> Enable Display Device -> Start the VM
+        give it a few momen to start...
+
+        then log back in to our VM:
+                bash gcp-ssh-vm.sh -e <your-vm-external-IP>
+        
+38. cool! Now lets go to your localhost mahcine and open up your Chrome browser:
+        Go to https://remotedesktop.google.com/headless
+        (CRITICAL) Log in using the same account which you use for your GCP VM
+        
+        Note: For the following procedure, You only need to perform once
+        
+        Set up via SSH -> 
+        Set uo another computer-> 
+        begin -> next -> authorize ->
+        copy the script with title 'Debian Linux' ->
+        paste it into your VM terminal -> run ->
+
+        Then you will get the following:
+                Enter a PIN of at least six digits:
+                Enter the same PIN again:
+                [1204/020103.286183:INFO:daemon_controller_delegate_linux.cc(98)] Created symlink /etc/systemd/system/multi-user.target.wants/chrome-remote-desktop@junjie.service → /lib/systemd/system/chrome-remote-desktop@.service.
+
+        You can test if the remote connection is set up by:
+                sudo systemctl status chrome-remote-desktop@$USER
+
+        Mark down the 6-digits pin you enter as we will bw using that connect to our VM
+
+        Go back to your chrome browser -> remote access -> choose can click on your registered VM instance -> 
+        type the 6-digits pin -> done! :D
+
+                Note: the chrome-based GUI display of our VM terminal has configuration as well,
+                        you can click on the erght edge of your window and pull it out. I recommended
+                        to set your FPS from 30(default) to 60, so it looks less laggy when we interact
+                        with our inner-VM later on
+                        
+
+
+36. okay! we can now use virt-manager to create our inner VM along with the GUI:
         sudo apt install virt-manager
         cd ~
         wget https://releases.ubuntu.com/jammy/ubuntu-22.04.1-desktop-amd64.iso
         mv ~/ubuntu-22.04.1-desktop-amd64.iso /var/lib/libvirt/images/
-        bash virt-install-vm.sh
-        virsh console ubuntu-vm
+        virt-manager
+        
+        If you done everything correctly, the virt-manager GUI should pop up on your 
+        chrome browser already and ready for VM configuration:
 
+        create a new virtual machine-> forward ->
+        browse the OS image ISO -> 
+        choose ubuntu-22.04.1-desktop-amd64.iso ->
+        choose volume -> forward ->
+        Memory -> half of your VM memory ->
+        CPU -> all of your VM CPUs -> foward
+        create a disk image for the virtual machine -> half of your VM memory -> forward
+        name -> ubuntu-vm -> finish
+
+        try or install ubuntu ->
+
+        on and on and on....you should be quite familiar with ubuntu OS installiation aren't you ;]
+
+        After the ubunto OS is installed, it will perform a reboot.
+
+        Note: depends on your KVM's configurations, you may encouter situation where the inner-vm 
+                keeps forzen after the reboot -> it is common and it is okay to force shut down and then
+                start the VM again. 
+        
+37. now we can perform our A2 exit handling testing on the newly installed inner-VM:
+        but first we need essential building tools:
+        sudo apt-get update
+        sudo apt-get install build-essential
+        sudo apt-get install cpuid
+
+        depends on your habit, you can either go ahead and write test.c or clone you existing A2 repo
+        and write test.C
+
+        A2_test.c:
+                #include <stdio.h>
+                #include <sys/types.h>
+
+
+                static inline void
+                __cpuid(unsigned int *eax, unsigned int *ebx, unsigned int *ecx,
+                unsigned int *edx)
+                {
+                        asm volatile("cpuid"
+                        : "=a" (*eax),"=b" (*ebx),"=c" (*ecx),"=d" (*edx)
+                        : "0" (*eax), "1" (*ebx), "2" (*ecx), "3" (*edx));
+                }
+
+                int
+                main(int argc, char **argv)
+                {
+                unsigned int eax, ebx, ecx, edx;
+                unsigned long long cycle_time;
+
+                eax = 0x4FFFFFFC;
+                __cpuid(&eax, &ebx, &ecx, &edx);
+                printf("CPUID(0x4FFFFFFC), Total exit counter = %u \n", eax);
+
+                eax = 0x4FFFFFFD;
+                __cpuid(&eax, &ebx, &ecx, &edx);
+                cycle_time = (unsigned long long) ebx << 32 | ecx;
+                printf("CPUID(0x4FFFFFFD), Total exit cycles = %llu \n", cycle_time);
+                }
+        
+
+
+
+sudo virt-install --name ubuntu-guest --os-variant ubuntu20.04 --vcpus 4 --ram 4096 --location http://ftp.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/ --network bridge=virbr0,model=virtio --graphics none --extra-args='console=ttyS0,115200n8 serial'
+
+
+
+sudo apt-get install guestmount
+virsh shutdown ubuntu-vm
+sudo guestmount -d ubuntu-guest -i /mnt 
+sudo vim /mnt/etc/default/grub
+        GRUB_CMDLINE_LINUX='console=tty0 console=ttyS0,19200n8'
+        :wq!
+sudo vim /mnt/boot/grub/grub.cfg
+        ...
+        echo    'Loading Linux 5.4.0-135-generic ...'
+    --->linux   /boot/vmlinuz-5.4.0-135-generic root=UUID=4878dcae-48ce-45ec-ad71-7b8365a305a7 ro console=ttyS0,19200 earlyprint=serial,ttyS0,19200 quiet splash $vt_handoff
+        echo    'Loading initial ramdisk ...'
+        initrd  /boot/initrd.img-5.4.0-135-generic
+        ...
+        :wq!
+sudo guestunmount /mnt
+sudo virsh start ubuntu-guest
+sudo virsh console ubuntu-guest
+sudo vim /var/log/libvirt/qemu/ubuntu-guest.log
+
+Sudo apt-get install cpuid
 
 virsh list --all
 virsh shutdown ubuntu-vm
@@ -622,7 +771,7 @@ virsh start ubuntu-vm
 virsh destroy ubuntu-vm
 virsh undefine ubuntu-vm
 
-
+/var/lib/libvirt/images/ubuntu-22.04.1-desktop-amd64.iso
 
 -----Temp-----
 
