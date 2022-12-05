@@ -1526,7 +1526,7 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 		// case %eax = 0x4FFFFFFC
 		case 0x4FFFFFFC:
 			eax = arch_atomic_read(&total_exits_counter);
-			printk(KERN_INFO "### Total Exits in EAX = %u", eax);
+			//printk(KERN_INFO "### Total Exits in EAX = %u", eax);
 			break;
 
 		// case %eax = 0x4FFFFFFD
@@ -1536,8 +1536,8 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 			//the low 32 bits of the total time spent processing all exits store in %ecx
 			ecx = (atomic64_read(&total_cup_cycles_counter) & 0xFFFFFFFF);
 			
-			printk(KERN_INFO "### Total CPU Exit Cycle Time(hi) in EBX = %u", ebx);
-			printk(KERN_INFO "### Total CPU Exit Cycle Time(lo) in ECX = %u", ecx);
+			//printk(KERN_INFO "### Total CPU Exit Cycle Time(hi) in EBX = %u", ebx);
+			//printk(KERN_INFO "### Total CPU Exit Cycle Time(lo) in ECX = %u", ecx);
 			break; 
 
 		// default case for all other %eax value

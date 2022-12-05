@@ -6281,20 +6281,6 @@ void dump_vmcs(struct kvm_vcpu *vcpu)
  * assistance.
  
  */
-/*
-* Modified function static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath) 
-* to report back additional information when special CPUID leaf nodes are requested:
-* %eax = 0x4FFFFFFC -> Return the total number of exits (all types) in %eax
-* 					-> added total_exit_counter
-* %eax = 0x4FFFFFFD -> Return the high 32 bits of the total time spent processing all exits in %ebx
-*                    Return the low 32 bits of the total time spent processing all exits in %ecx 
-*					-> added total_cup_cycles_counter
-*/
-
-//extern gloabl u32 variable for recording total number of exits
-extern atomic_t total_exits_counter;
-//extern gloabl uint64_t variable for recording total number of cpu cycles on exits
-extern atomic64_t total_cup_cycles_counter;
 
 static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 {
@@ -6475,25 +6461,39 @@ unexpected_vmexit:
 	return 0;
 }
 
+/*
+* Assignment 2 Modification ->
+* Modified function static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
+* to report back additional information when special CPUID leaf nodes are requested:
+* %eax = 0x4FFFFFFC -> Return the total number of exits (all types) in %eax
+* %eax = 0x4FFFFFFD -> Return the high 32 bits of the total time spent processing all exits in %ebx
+*                    Return the low 32 bits of the total time spent processing all exits in %ecx 
+*/
+
+//extern global u32 variable (from cpuid.c) for recording total number of exits
+extern atomic_t total_exits_counter;
+//extern global uint64_t variable (from cpuid.c) for recording total number of cpu cycles on exits
+extern atomic64_t total_cup_cycles_counter;
+
 static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 {
 
 	// local uint64_t variables for record the beginning and the ending of processor's time stamp counter 
 	uint64_t begin_time_stamp_counter, end_time_stamp_counter;
-	// local int variable to store the return status of exit handler
+	// local int variable to store the return status of vmx handler exit function
 	int ret;
 
 	// increase by 1 for every exit
 	arch_atomic_inc(&total_exits_counter);
-	// record the beginning of processor's time stamp counter 
+	// record the beginning of cpu's time stamp counter 
 	begin_time_stamp_counter = rdtsc();
+
 	// call the corressponding exit handler to handle the exit
-	
 	ret = __vmx_handle_exit(vcpu, exit_fastpath);
 
-	// record the ending of processor's time stamp counter
+	// record the ending of cpu's time stamp counter
 	end_time_stamp_counter = rdtsc();
-	// compute the current time stamp gap and add it to the total processor cycle time
+	// compute the current time stamp gap and add it to the total cpu cycle time
 	arch_atomic64_add((end_time_stamp_counter - begin_time_stamp_counter), &total_cup_cycles_counter);
 
 	/*
