@@ -22,7 +22,9 @@ At a high level, you will need to perform the following:
 
 Note: The assignment 1 instructions are specific to Intel brand CPUs. If you are using an AMD brand CPU (or another type of CPU such as an ARM64 or Apple M1/M2), you will need to do this assignment in Google Cloud (GCP).
 
-Refer to [A1 Instruction](A1/283_Assignment1-F22.pdf) for detailed info and instructions in this assignment, and refer to my [A1 log-book](A1/A1-log-book.txt) if you are blocked and needed help.
+Go to [A1](A1/) directory and read the corresponding README.md file to gain more info.
+
+---
 
 ### Assignment 2: Instrumentation Via Hyper-call (Add New CPUID Emulation Features in KVM)
 
@@ -50,4 +52,4 @@ At a high level, you will need to perform the following:
         * There is no need to insmod anything like assignment 1 did
 * Verify proper output
 
-Refer to [A2 Instruction](source/283_Assignment2-3_F22.pdf) for detailed info and instructions in this assignment, and refer to my [A2 log-book](A2-log-book.txt) if you are blocked and needed help.
+Go to [A2](A2/) directory and read the corresponding README.md file to gain more info.

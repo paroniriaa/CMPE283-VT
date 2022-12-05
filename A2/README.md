@@ -1,9 +1,3 @@
-# Virtualization-Technologies
-
-## CMPE 283 Virtualization Technologies Assignments
-
----
-
 ### Assignment 2: Instrumentation Via Hyper-call (Add New CPUID Emulation Features in KVM)
 
 This assignment (A2) is to modify the CPUID emulation code in KVM to report back additional information
