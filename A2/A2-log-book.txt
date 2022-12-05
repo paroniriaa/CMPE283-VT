@@ -1,5 +1,5 @@
 ---CRITICAL NOTE---
-All commands listed here are done in a Linux(Ubunto) machine, so try to modify some steps/elements if you are using Windows/Mac.
+All commands listed here are done in a Linux(Ubuntu) machine, so try to modify some steps/elements if you are using Windows/Mac.
 
 
 0. (Optional) You can first download and install GCP CLI tools:
@@ -10,7 +10,7 @@ All commands listed here are done in a Linux(Ubunto) machine, so try to modify s
 
 2. Create new project named CMPE-283, and connect it with the billing account created in step 1.
 
-3. Enable Computer Engine API, wait for its initializiation to be done.
+3. Enable Computer Engine API, wait for its initialization to be done.
 
 4. Configure VM Intance on GCP:
         Go to GCP -> Compute Engine -> Virtual Machines -> VM instances -> Create instance:
@@ -55,22 +55,22 @@ All commands listed here are done in a Linux(Ubunto) machine, so try to modify s
                 
                 cat /home/$USER/.ssh/google_cloud_key.pub
         
-        Note: If you have terminated a VM in GCP which happends to have the same external IP address to the VM that you just create
-                you will run into host authenticity failuae which blocks you from establishing the SSH connection between your
+        Note: If you have terminated a VM in GCP which happens to have the same external IP address to the VM that you just create
+                you will run into host authenticity failure which blocks you from establishing the SSH connection between your
                 machine and the host -> because GCP reused the same IP but different ECDSA key fingerprint(public key) for 
                 different VM, so your known host info recorded in your .ssh/known_hosts has a mismatch (GCP should really fix it....)
         Sol: re-create your SSH KEY using the gcp-gen-ssh.sh, do step 8 to add the fresh SSH key and delete the old SSH key, then
-                you should be good to go (but the price is thatyou will need to add all the host info again when connecting :C)
+                you should be good to go (but the price is that you will need to add all the host info again when connecting :C)
                 Also, remove your known host in your machine:
                 ssh-keygen -f "/home/<your-account>/.ssh/known_hosts" -R "<VM-external-IP>"
 
 8. Save the generated SSH public key to GCP VM Metadata:
         Go to GCP -> Compute Engine -> Settings -> Metadata -> SSH Keys -> Add Item ->
-                # the format should looks like the following
+                # the format should look like the following
                 Username: <your name> (it will get auto generated)
                 Key: ssh-sra AAAA.....XfGI0= <your name> (just copy from ssh-sra...to the end)
 
-9. Connecte to default VM instance-1 in GCP:
+9. Connect to default VM instance-1 in GCP:
         # located A2/scripts/, modify it before you use 
         bash gcp-ssh-vm.sh -e  -e <vm-external-IP>
                 # define $USER if needed 
@@ -88,7 +88,7 @@ All commands listed here are done in a Linux(Ubunto) machine, so try to modify s
 10. Clone the Course GitHub Repo to the VM:
         #check screenshots/VM-gcp-ssh-vm.jpg
         #check screenshots/VM-info(uname-df-nested).jpg
-        # Your GitHub Repo should contains the initial files that provided by Prof. Mike Larkin:
+        # Your GitHub Repo should contain the initial files that provided by Prof. Mike Larkin:
                 # 283_Assignment1-F22.pdf, cmpe283-1.c, Makefile
         # your https-based GitHub Repo looks like this: https://github.com/paroniriaa/CMPE283-VT.git
         git clone <your https-based GitHub Repo>
@@ -102,7 +102,7 @@ All commands listed here are done in a Linux(Ubunto) machine, so try to modify s
         sudo apt-get install libssl-dev
         sudo apt-get install libelf-dev
 
-        #This line of command may not necessary work as $(uname -r) does not guarantee to give the 'right' version for your linux-headers(such as WSL)
+        #This line of command may not necessarily work as $(uname -r) does not guarantee to give the 'right' version for your linux-headers(such as WSL)
         sudo apt-get install linux-headers-$(uname -r)
         
         # If failed, try to use the following to find the right version of linux header for your machine
@@ -111,7 +111,7 @@ All commands listed here are done in a Linux(Ubunto) machine, so try to modify s
 
         #---CRITICAL NOTE---: 
                 If you are using WSL/WSL2, you will not be able to find the
-                coresspoinding linux header because the base WSL2 kernel does not 
+                corresponding linux header because the base WSL2 kernel does not
                 allow modules to be loaded. You have to download, compile and use 
                 your own kernel build. 
                 For details, refer to https://unix.stackexchange.com/questions/594470/wsl-2-does-not-have-lib-modules
@@ -125,7 +125,7 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 && sudo apt update \
 && sudo apt install gh -y
 
-13. (Optional) Login to the GitHub account for avoiding multiple auth promots when performing push/pull:
+13. (Optional) Login to the GitHub account for avoiding multiple auth prompts when performing push/pull:
         gh auth login
         ? What account do you want to log into? GitHub.com
         ? What is your preferred protocol for Git operations? HTTPS
@@ -148,7 +148,7 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
         gpg --export --armor <your email>
         gpg --export --armor --output <some file name>.gpg.pub <your email>
 
-15. (Optional) Configure Git global proerites for auto sign using GPG key when commit:
+15. (Optional) Configure Git global properties for auto sign using GPG key when committed:
         git config --global user.name <your name>
         git config --global user.email <your email>
         gpg --list-secret-keys --keyid-format=long
@@ -176,7 +176,7 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
                         GPG_TTY=$(tty)
                         export GPG_TTY
 
-        # check your signed/unsigne log history ezily
+        # check your signed/unsigne log history easily
         git log --pretty="format:%h %G? %aN  %s"
         
         Note: 
@@ -187,12 +187,12 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
         In case you mess up on some branch and want to force sync your local branch with the current main branch:        
                 git reset --hard origin/main
 
-16. (CRTICAL) check if the current VM has the nested virtualization functionailities:
+16. (CRTICAL) check if the current VM has the nested virtualization functionalities:
         #check screenshots/VM-cpuinfo-0~4.jpg
         #check screenshots/VM-lscpu-0~1.jpg
         Note: This is very very important, make sure you check it, otherwise all your following works will not be valid :C
-                If you strictly followed my gcp-create-vm.sh shell script, you should be fine, as we explictly configured that
-                '--enable-nested-virtualization' when creating the VM. Still, we need to double check:
+                If you strictly followed my gcp-create-vm.sh shell script, you should be fine, as we explicitly configured that
+                '--enable-nested-virtualization' when creating the VM. Still, we need to double-check:
         We can check using the following command:
        
         cat /proc/cpuinfo
@@ -232,7 +232,7 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
         based on GCP specification, you can also confirm the nested virtualization using another command:
         grep -cw vmx /proc/cpuinfo
                 8
-                any output other than 0 indicated that the nested virtualization capibility is enabled
+                any output other than 0 indicated that the nested virtualization capability is enabled
 
         if you want, you can check the amount of disk space available on the filesystem with each file name's argument:
         
@@ -247,11 +247,11 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 
 
 17. Note that we actually skiped the requirement for 'download and build the Linux kernel source code' during A1,
-so now we need to do it for the right configuration and envirnment for A2 and A3
+so now we need to do it for the right configuration and environment for A2 and A3
         #check screenshots/VM-clone-linux-kernel.jpg
         Note: I took CMPE 283 during the Fall 2022 semester, and Prof. Mike Larkin did not make the requirement
-                (that i mentioned above) to be mandatoary during A1, but yours may be differnt, so you need to
-                double check, otherwise you may loose points :C.
+                (that I mentioned above) to be mandatory during A1, but yours may be different, so you need to
+                double-check, otherwise you may lose points :C.
         First, go to https://github.com/torvalds/linux, fork the repo to your account, and clone it on your VM:
 
         cd ~
@@ -260,13 +260,13 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
         git status
         git remote -v
 
-18. The forked linux kernel may not be buildable as its not yet correctly configured for the current VM we are running,
+18. The forked linux kernel may not be buildable as it is not yet correctly configured for the current VM we are running,
         #check screenshots/VM-cp-kernel-config-file.jpg
         
-        so we need to find the coresspoinding configuration file for it:
+        so we need to find the corresponding configuration file for it:
         cd ~/linux 
         uname -r
-                Note: my VM's kernel relase is '5.15.0-1025-gcp', yours might be differnt, 
+                Note: my VM's kernel release is '5.15.0-1025-gcp', yours might be different,
                 mark it as you will need it for the next command
         
         cp /boot/config-5.15.0-1025-gcp ~/linux/.config
@@ -322,7 +322,7 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
 19. build the linux kernel using the .config file we copied:
         #check screenshots/VM-make-oldconfig.jpg
         Note: if we have our .config file ready under the linux directory, the command 'make oldconfig' will take advantage of it and
-        only ask the questions that is not listed in it based on the release version of the linux kernel that we going to build
+        only ask the questions that is not listed in it based on the release version of the linux kernel that we're going to build
 
         # (CRITICAL) install these essential tools before you make oldconfig, depends on your VM, you may need to install other needed tools, try to figure it out yourself :C
         sudo apt-get install build-essential
@@ -334,10 +334,10 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
         sudo apt-get install libelf-dev
 
         make oldconfig
-                Note: even though we have our .config file, we still need to answer bunch of configuration questions, but luckily the oldconfig 
+                Note: even though we have our .config file, we still need to answer a bunch of configuration questions, but luckily the oldconfig
                 will figure out the default options for us, so we just need to press 'Enter' key all the way to the end :D 
 
-        (CRITICAL)Note: Before you build the modules, you may want to double check your .config file to change some content to prevent make modules from failing
+        (CRITICAL)Note: Before you build the modules, you may want to double-check your .config file to change some content to prevent make modules from failing
         
         scripts/config --disable SYSTEM_TRUSTED_KEYS
                 Note: or change the value of 'CONFIG_SYSTEM_TRUSTED_KEYS' to ""
@@ -358,7 +358,7 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
         #check screenshots/VM-make-modules.jpg
         make -j <your-vm-cpu-total-core-number> modules
                 Note: you can use more than one CPU core to build all the modules for linux kernel
-                        This is a process that would take EXTREAMLY long time to finish, so MAKE SURE you use all cores available, 
+                        This is a process that would take EXTREMELY long time to finish, so MAKE SURE you use all cores available,
                         otherwise you will regret...:C
 
 22. build the linux kernel itself:        
@@ -366,14 +366,14 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
         #check screenshots/VM-make-kernel-1.jpg
         make -j <your-vm-cpu-total-core-number> 
                 Note: again, you can use more than one CPU core to build the linux kernel
-                and again, this is a process that would take EXTREAMLY long time to finish, so MAKE SURE you use all cores available, 
+                and again, this is a process that would take EXTREMELY long time to finish, so MAKE SURE you use all cores available,
                 otherwise you will regret...:C
 
 
 23. after the modules and kernel is built, we can package them into a format that suitable for booting inside our VM
         #check screenshots/VM-install-modules.jpg
         sudo make -j <your-vm-cpu-total-core-number> INSTALL_MOD_STRIP=1 modules_install
-                Note: it takes too much space to package all modules indluding their debug info, so we will use INSTALL_MOD_STRIP=1
+                Note: it takes too much space to package all modules including their debug info, so we will use INSTALL_MOD_STRIP=1
                 to strip all the debugging information off the modules while they are being installed, so it is more light-weight
                 for our linux kernel
 
@@ -386,24 +386,24 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
         #check screenshots/VM-before-reboot.jpg
         sudo reboot
         
-26. (CRITICAL) now connet back to the VM, use uname command to check if our newly installed linux kernel is loaded:
+26. (CRITICAL) now connect back to the VM, use uname command to check if our newly installed linux kernel is loaded:
         #check screenshots/VM-after-reboot.jpg
         uname -a 
 
 
-27. (optional)Try compile and run the initial cmpe283-1.c code and check the boosted linux kernel output of MSR discovery(IA32_VMX_PINBASED_CTLS for now):
-        #check screenshots/VM-nested-kernal-test.jpg
+27. (optional)Try to compile and run the initial cmpe283-1.c code and check the boosted linux kernel output of MSR discovery(IA32_VMX_PINBASED_CTLS for now):
+        #check screenshots/VM-nested-kernel-test.jpg
         
         # the initial implementation of cmpe283-1.c should have included the discovery of IA32_VMX_PINBASED_CTLS
         # if you are using my version of cmpe283-1.c, it would print the complete MSRs discovery
-        # welp we just gonna compile it and run it to make sure our working enviroment is compatible for A2 and A3
+        # welp we just gonna compile it and run it to make sure our working environment is compatible for A2 and A3
 
         make clean
         make all
         # if you are using my version of Makefile (recommended)
         make test
 
-        if everthing works fine, you should be able to see soemthing like this:
+        if everything works fine, you should be able to see something like this:
         
         # Display the kernel log
         sudo dmesg
@@ -420,10 +420,10 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
         [  169.300731] Printing Primary Processor-Based VM-Execution Controls...
         (continue to print...)
 
-        If you see the info printed aboves, great, now we can actually start our A2/A3 (I dont know about you but I'm half dead already...:CCC)
+        If you see the info printed above, great, now we can actually start our A2/A3 (I dont know about you, but I'm half dead already...:CCC)
 
 
-28. to make changes in the kvm hypervisor, we first need to nevigate to 'arch' directory,
+28. to make changes in the kvm hypervisor, we first need to navigate to 'arch' directory,
     then check both kvm.c and cpuid.c:
     
     cd ~/linux/arch/x86/kvm
@@ -432,12 +432,12 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
     cpuid.c is what we are looking for here
 
     Note: this is not related to the A2/A3, but you will see directory 'vmx' and 'svm' here, 
-    which corressponding to intel brand and amd brand cpu, and we can check vmx/vmx.c to see
+    which corresponding to intel brand and amd brand cpu, and we can check vmx/vmx.c to see
     how intel handle the vm exit:
         vim cmx.c 
         /handle_exit
         /kvm_emulate_cpuid
-            Note: you will notice that kvm_emulate_cpuid does not defined here, then it must be difined somewhere else, lets find it!
+            Note: you will notice that kvm_emulate_cpuid does not define here, then it must be defined somewhere else, lets find it!
         :qa
         cd ..
         grep -R kvm_emulate_cpuid *
@@ -446,13 +446,13 @@ so now we need to do it for the right configuration and envirnment for A2 and A3
             Note: there we go! function -> int kvm_emulate_cpuid(struct kvm_vcpu *cpu) is the main character that we are looking for in A2/A3,
                 which handles all the kvm cpuid exit 
 
-29. before we do anything to change the content of kvm.c and cpuid.c, let's save the original copy for furture reference and comparison purpose:
+29. before we do anything to change the content of kvm.c and cpuid.c, let's save the original copy for future reference and comparison purpose:
         cp ~/linux/arch/x86/kvm/cpuid.c ~/CMPE283-VT/A2/source/cpuid.origin.c  
         diff ~/linux/arch/x86/kvm/cpuid.c ~/CMPE283-VT/A2/source/cpuid.origin.c  
         cp ~/linux/arch/x86/kvm/vmx/vmx.c ~/CMPE283-VT/A2/source/vmx.origin.c
         diff ~/linux/arch/x86/kvm/vmx/vmx.c ~/CMPE283-VT/A2/source/vmx.origin.c
 
-30. now, following the requirements in the A2/A3 instructions, we will be modifing the CPUID emulation code in KVM to report back additional information
+30. now, following the requirements in the A2/A3 instructions, we will be modifying the CPUID emulation code in KVM to report back additional information
 when special CPUID leaf nodes are requested:
     A2:
         %eax=0x4FFFFFFC -> Return the total number of exits (all types) in %eax
@@ -484,94 +484,94 @@ when special CPUID leaf nodes are requested:
                 -> Appendix C VMX Basic Exit Reasons 
                 -> Table C-1. Basic Exit Reasons (page 4285)
 
-                Notice that some of the basic exit reaosn number does not exit, for example, 35, etc
+                Notice that some basic exit reason number does not exit, for example, 35, etc.
                 In other words:
                 -> The valid range for %ecx: 0~34, 36~37, 39~41, 43~69
                 -> The invalid range for %ecx: 35, 38, 42, N>69
 
 
 31. let's modify ~/linux/arch/x86/kvm/vmx/vmx.c first for A2 requirement:
+    ...
+    //extern global u32 variable (from cpuid.c) for recording total number of exits
+    extern atomic_t total_exits_counter;
+    //extern global uint64_t variable (from cpuid.c) for recording total number of cpu cycles on exits
+    extern atomic64_t total_cup_cycles_counter;
+
+    static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
+    {
+        // local uint64_t variables for record the beginning and the ending of processor's time stamp counter
+        uint64_t begin_time_stamp_counter, end_time_stamp_counter;
+        // local int variable to store the return status of vmx handler exit function
+        int ret;
+
+        // increase by 1 for every exit
+        arch_atomic_inc(&total_exits_counter);
+        // record the beginning of cpu's time stamp counter
+        begin_time_stamp_counter = rdtsc();
+
+        // call the corressponding exit handler to handle the exit
+        ret = __vmx_handle_exit(vcpu, exit_fastpath);
+
+        // record the ending of cpu's time stamp counter
+        end_time_stamp_counter = rdtsc();
+        // compute the current time stamp gap and add it to the total cpu cycle time
+        arch_atomic64_add((end_time_stamp_counter - begin_time_stamp_counter), &total_cup_cycles_counter);
+
         ...
-        //extern gloabl u32 variable for recording total number of exits
-        extern u32 total_exits_counter;
-        //extern gloabl uint64_t variable for recording total number of cpu cycles on exits
-        extern uint64_t total_cup_cycles_counter;
+    }
+    ...
 
-        static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
-        {
-                // local uint64_t variables for record the beginning and the ending of processor's time stamp counter 
-                uint64_t begin_time_stamp_counter, end_time_stamp_counter;
-                // local int variable to store the return status of exit handler
-                int exit_handler_status;
-
-                struct vcpu_vmx *vmx = to_vmx(vcpu);
-                ...
-                ...
-                if (!kvm_vmx_exit_handlers[exit_handler_index])
-                goto unexpected_vmexit;
-
-                // atomically increase by 1 for every exit
-                arch_atomic_inc(&total_exits_counter);
-                // record the beginning of processor's time stamp counter 
-                begin_time_stamp_counter = rdtsc();
-                // call the corressponding exit handler to handle the exit
-                exit_handler_status = kvm_vmx_exit_handlers[exit_handler_index](vcpu);
-                // record the ending of processor's time stamp counter
-                end_time_stamp_counter = rdtsc();
-                // atomically compute the current time stamp gap and add it to the total processor cycle time
-	        arch_atomic64_add((end_time_stamp_counter - begin_time_stamp_counter), &total_cup_cycles_counter);
-
-                return exit_handler_status
-
-        unexpected_vmexit:
-        ...
-        }
 
 32. then modify ~/linux/arch/x86/kvm/cpuid.c for A2 requirement:
-        //volatile int counter for total_exits_counter, atomically initialize to 0
-        atomic_t total_exits_counter = ATOMIC_INIT(0);
-        //export the variable total_exits_counter so vmx.c can use it
-        EXPORT_SYMBOL(total_exits_counter);
-        
-        //volatile int64 counter for total_cup_cycles_counter, atomically initialize to 0
-        atomic64_t total_cup_cycles_counter = ATOMIC64_INIT(0);
-        //export the variable total_cup_cycles_counter so vmx.c can use it
-        EXPORT_SYMBOL(total_cup_cycles_counter);
-        
-        int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
-        {
-                //uint64_t variable for recording total number of cpu cycles on exits
-                uint64_t total_cup_cycles;
-                u32 eax, ebx, ecx, edx;
-                ...
-                ...
-                eax = kvm_rax_read(vcpu);
-	        ecx = kvm_rcx_read(vcpu);
+    ...
+    //volatile int counter for total_exits_counter, atomically initialize to 0
+    atomic_t total_exits_counter = ATOMIC_INIT(0);
+    //export the variable total_exits_counter so vmx.c can use it
+    EXPORT_SYMBOL(total_exits_counter);
 
-                // check special new CPUID leaf that defined in A2
-                switch(eax) {
-                        // case %eax = 0x4FFFFFFC
-                        case 0x4FFFFFFC:
-                                eax = arch_atomic_read(&total_exits_counter);
-                                break;
+    //volatile int64 counter for total_cup_cycles_counter, atomically initialize to 0
+    atomic64_t total_cup_cycles_counter = ATOMIC64_INIT(0);
+    //export the variable total_cup_cycles_counter so vmx.c can use it
+    EXPORT_SYMBOL(total_cup_cycles_counter);
 
-                        // case %eax = 0x4FFFFFFD
-                        case 0x4FFFFFFD:
-                                total_cup_cycles = arch_atomic64_read(&total_cup_cycles_counter);
-                                //the high 32 bits of the total time spent processing all exits store in %ebx
-                                ebx = (total_cup_cycles >> 32);;	
-                                //the low 32 bits of the total time spent processing all exits store in %ecx
-                                ecx = (total_cup_cycles & 0xffffffff); 
-                                break; 
+    int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
+    {
+        u32 eax, ebx, ecx, edx;
 
-                        // default case for all other %eax value
-                        default:
-                                kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
-                }
+        if (cpuid_fault_enabled(vcpu) && !kvm_require_cpl(vcpu, 0))
+            return 1;
+
+        eax = kvm_rax_read(vcpu);
+        ecx = kvm_rcx_read(vcpu);
+
+        // check special new CPUID leaf that defined in A2
+        switch(eax) {
+            // case %eax = 0x4FFFFFFC
+            case 0x4FFFFFFC:
+                eax = arch_atomic_read(&total_exits_counter);
+                //printk(KERN_INFO "### Total Exits in EAX = %u", eax);
+                break;
+
+            // case %eax = 0x4FFFFFFD
+            case 0x4FFFFFFD:
+                //the high 32 bits of the total time spent processing all exits store in %ebx
+                ebx = (atomic64_read(&total_cup_cycles_counter) >> 32);;
+                //the low 32 bits of the total time spent processing all exits store in %ecx
+                ecx = (atomic64_read(&total_cup_cycles_counter) & 0xFFFFFFFF);
+
+                //printk(KERN_INFO "### Total CPU Exit Cycle Time(hi) in EBX = %u", ebx);
+                //printk(KERN_INFO "### Total CPU Exit Cycle Time(lo) in ECX = %u", ecx);
+                break;
+
+            // default case for all other %eax value
+            default:
+                kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
+            }
 
                 kvm_rax_write(vcpu, eax);
                 ...
         }
+        ...
 
 33. go back to the top level of ~/linux to build and install the modules again, then install the kernel:
         make -j <your-vm-cpu-total-core-number> modules
@@ -584,7 +584,7 @@ when special CPUID leaf nodes are requested:
         sudo lsmod | grep kvm
 
 34. if there is no error, then we are ready to create a inner VM inside our current VM,
-but first we need to intall some extra tools for KVM, then check kvm-ok, and reboot:
+but first we need to install some extra tools for KVM, then check kvm-ok, and reboot:
         sudo apt-get install cpu-checker
         sudo apt update
         sudo apt-get install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
@@ -592,7 +592,7 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
         sudo reboot
 
 
-35. now we need to authorize a vm users for the inner VM, and verify our VM functionailities: 
+35. now we need to authorize a vm users for the inner VM, and verify our VM functionalities:
         uname -a
         sudo adduser '<your-name>' libvirt
                 Note: you can check all your libvirt usser using the following command:
@@ -608,11 +608,11 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
                         sudo systemctl enable --now libvirtd
 
 
-36. now, we want to install some basic GUI functionailities on our VM for inner-vm interaction:
-        Note: I tried so many ways to interacter with the inner-VM using CLI only but failed,
-                if you figured out how to host a inner-VM inside of the current VM, do let me know! :d
+36. now, we want to install some basic GUI functionalities on our VM for inner-vm interaction:
+        Note: I tried so many ways to interact with the inner-VM using CLI only but failed,
+                if you figured out how to host an inner-VM inside the current VM, do let me know! :d
 
-        Note: Assuming you are following my step and hosted your VM on GCP, we can utlize the GUI functionailities
+        Note: Assuming you are following my step and hosted your VM on GCP, we can utilize the GUI functionalities
                 supported by GCP (coooool)
         sudo apt update
         sudo apt install --assume-yes wget tasksel
@@ -628,16 +628,16 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
         mkdir ~/.config/chrome-remote-desktop
         exit
 
-37. to fully enable the GUI functionailities provided by GCP, we need to first stop our VM and check the visual support box:
+37. to fully enable the GUI functionalities provided by GCP, we need to first stop our VM and check the visual support box:
         Go to your GCP -> Compute Instance -> Stop the VM
         give it a few moment to stop...
         Then, go to your VM -> Edit -> Machine Configuration -> Enable Display Device -> Start the VM
-        give it a few momen to start...
+        give it a few moment to start...
 
         then log back in to our VM:
                 bash gcp-ssh-vm.sh -e <your-vm-external-IP>
         
-38. cool! Now lets go to your localhost mahcine and open up your Chrome browser:
+38. cool! Now lets go to your localhost machine and open up your Chrome browser:
         Go to https://remotedesktop.google.com/headless
         (CRITICAL) Log in using the same account which you use for your GCP VM
         
@@ -663,11 +663,9 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
         type the 6-digits pin -> done! :D
 
                 Note: the chrome-based GUI display of our VM terminal has configuration as well,
-                        you can click on the erght edge of your window and pull it out. I recommended
-                        to set your FPS from 30(default) to 60, so it looks less laggy when we interact
+                        you can click on the eight edge of your window and pull it out. I recommended
+                        setting your FPS from 30(default) to 60, so it looks less laggy when we interact
                         with our inner-VM later on
-                        
-
 
 36. okay! we can now use virt-manager to create our inner VM along with the GUI:
         sudo apt install virt-manager
@@ -676,7 +674,7 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
         sudo mv ~/ubuntu-22.04.1-desktop-amd64.iso /var/lib/libvirt/images/
         sudo virt-manager
         
-        If you done everything correctly, the virt-manager GUI should pop up on your 
+        If you get everything done correctly, the virt-manager GUI should pop up on your
         chrome browser already and ready for VM configuration:
 
         create a new virtual machine-> forward ->
@@ -684,18 +682,18 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
         choose ubuntu-22.04.1-desktop-amd64.iso ->
         choose volume -> forward ->
         Memory -> half of your VM memory ->
-        CPU -> all of your VM CPUs -> foward
+        CPU -> all of your VM CPUs -> forward
         create a disk image for the virtual machine -> half of your VM memory -> forward
         name -> ubuntu-vm -> finish
 
         try or install ubuntu ->
 
-        on and on and on....you should be quite familiar with ubuntu OS installiation aren't you ;]
+        on and on and on....you should be quite familiar with ubuntu OS installation aren't you ;]
 
-        After the ubunto OS is installed, it will perform a reboot.
+        After the ubuntu OS is installed, it will perform a reboot.
 
-        Note: depends on your KVM's configurations, you may encouter situation where the inner-vm 
-                keeps forzen after the reboot -> it is common and it is okay to force shut down and then
+        Note: depends on your KVM's configurations, you may encounter situation where the inner-vm
+                keeps frozen after the reboot -> it is common, and it is okay to force shut down and then
                 start the VM again. 
         
 37. now we can perform our A2 exit handling testing on the newly installed inner-VM:
@@ -716,105 +714,36 @@ but first we need to intall some extra tools for KVM, then check kvm-ok, and reb
                 __cpuid(unsigned int *eax, unsigned int *ebx, unsigned int *ecx,
                 unsigned int *edx)
                 {
-                        asm volatile("cpuid"
-                        : "=a" (*eax),"=b" (*ebx),"=c" (*ecx),"=d" (*edx)
-                        : "0" (*eax), "1" (*ebx), "2" (*ecx), "3" (*edx));
+                    asm volatile("cpuid"
+                    : "=a" (*eax),"=b" (*ebx),"=c" (*ecx),"=d" (*edx)
+                    : "0" (*eax), "1" (*ebx), "2" (*ecx), "3" (*edx));
                 }
 
                 int
                 main(int argc, char **argv)
                 {
-                unsigned int eax, ebx, ecx, edx;
-                unsigned long long cycle_time;
+                    unsigned int eax, ebx, ecx, edx;
+                    unsigned long long cycle_time;
 
-                eax = 0x4FFFFFFC;
-                __cpuid(&eax, &ebx, &ecx, &edx);
-                printf("CPUID(0x4FFFFFFC), Total exit counter = %u \n", eax);
+                    eax = 0x4FFFFFFC;
+                    __cpuid(&eax, &ebx, &ecx, &edx);
+                    printf("CPUID(0x4FFFFFFC), Total exit counter = %u \n", eax);
 
-                eax = 0x4FFFFFFD;
-                __cpuid(&eax, &ebx, &ecx, &edx);
-                cycle_time = (unsigned long long) ebx << 32 | ecx;
-                printf("CPUID(0x4FFFFFFD), Total exit cycles = %llu \n", cycle_time);
+                    eax = 0x4FFFFFFD;
+                    __cpuid(&eax, &ebx, &ecx, &edx);
+                    cycle_time = (unsigned long long) ebx << 32 | ecx;
+                    printf("CPUID(0x4FFFFFFD), Total exit cycles = %llu \n", cycle_time);
                 }
-        
+        Makefile:
+              default: build
+              build:
+              	g++ -o A2-test A2-test.c
+              run:
+              	./A2-test
 
+38. compile and run A2-test.c to verify the result of CPUID leaf eax = 0x4FFFFFFC and eax = 0x4FFFFFFD:
 
+    make
+    make test
 
-sudo virt-install --name ubuntu-guest --os-variant ubuntu20.04 --vcpus 4 --ram 4096 --location http://ftp.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/ --network bridge=virbr0,model=virtio --graphics none --extra-args='console=ttyS0,115200n8 serial'
-
-
-
-sudo apt-get install guestmount
-virsh shutdown ubuntu-vm
-sudo guestmount -d ubuntu-guest -i /mnt 
-sudo vim /mnt/etc/default/grub
-        GRUB_CMDLINE_LINUX='console=tty0 console=ttyS0,19200n8'
-        :wq!
-sudo vim /mnt/boot/grub/grub.cfg
-        ...
-        echo    'Loading Linux 5.4.0-135-generic ...'
-    --->linux   /boot/vmlinuz-5.4.0-135-generic root=UUID=4878dcae-48ce-45ec-ad71-7b8365a305a7 ro console=ttyS0,19200 earlyprint=serial,ttyS0,19200 quiet splash $vt_handoff
-        echo    'Loading initial ramdisk ...'
-        initrd  /boot/initrd.img-5.4.0-135-generic
-        ...
-        :wq!
-sudo guestunmount /mnt
-sudo virsh start ubuntu-guest
-sudo virsh console ubuntu-guest
-sudo vim /var/log/libvirt/qemu/ubuntu-guest.log
-
-Sudo apt-get install cpuid
-
-virsh list --all
-virsh shutdown ubuntu-vm
-virsh start ubuntu-vm
-virsh destroy ubuntu-vm
-virsh undefine ubuntu-vm
-
-/var/lib/libvirt/images/ubuntu-22.04.1-desktop-amd64.iso
-
------Temp-----
-
-cpuid.c ->
-int kvm_emulate_cpuid(struct kvm_vcpu *cpu) {
-...
-extern u32 total_exits;
-
-...
-KVM_CPUID();
-if (eax == 0x4FFFFFFC) {
-    // DO something
-    eax = total_exits;
-}
-}
-
-
-vmx.c ->
-u32 total_exits;
-int__vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath){
-    ...
-    u16 exit_handler_index;
-
-    total_exits++;
-    //inc total_exits;
-}
-
-
-sudo make -j 8 modules
-sudo make -j 8 INSTALL_MOD_STRIP=1 modules_install && make install
-
-21:30
-sudo lsmod | grep kvm
-sudo rmmod kvm_intel
-sudo rmmod kvm
-sudo lsmod | grep kvm
-sudo modprobe kvm
-sudo lsmod | grep kvm
-sudo modprobe kvm_intel
-sudo lsmod | grep kvm
-
-
-sudo apt-get install qemu-kvm 
-sudo apt-get install libvirt-bin 
-sudo apt-get install bridge-utils 
-sudo apt-get install virt-manager
+    A2-test result:

@@ -35,16 +35,14 @@ Refer to [A2 Instruction](source/283_Assignment2-3_F22.pdf) for detailed info an
 ### A2 Result Demonstration
 (check out [A2 screenshots](screenshots/) for more)
 
-GCP-VM-L1-Original-Kernel
-![GCP-VM-L1-Original-Kernel](screenshots/VM-before-reboot.jpg)
+GCP-VM-L1-Original-Kernel-Info
+![GCP-VM-L1-Original-Kernel-Info](screenshots/VM-before-reboot.jpg)
 
-GCP-VM-L1-Modified-Kernel
+GCP-VM-L1-Modified-Kernel-Info
 ![GCP-VM-L1-Modified-Kernel](screenshots/VM-after-reboot.jpg)
 
-GCP-VM-L2-Kernel [Nested Virtualization]
-![GCP-VM-L2-Kernel](screenshots/VM-inner-vm-successfully-launch.jpg)
+GCP-VM-L2-Kernel-Info [Nested Virtualization]
+![GCP-VM-L2-Kernel-Info](screenshots/VM-inner-vm-info.jpg)
 
-GCP-VM-L2-A2-Test
-![GCP-VM-L2-A2-Test](screenshots/VM-A2-test.jpg)
-
-TBD...
+GCP-VM-L2-A2-Test-Result
+![GCP-VM-L2-A2-Test-Result](screenshots/VM-inner-vm-A2-test.jpg)
