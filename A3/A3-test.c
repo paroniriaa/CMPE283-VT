@@ -20,12 +20,12 @@ main(int argc, char **argv)
     int i;
     bool valid;
     
-    printf("-----Test Leaf Node CPUID(0x4FFFFFFC)-----\n");
+    printf("\n-----Test Leaf Node CPUID(0x4FFFFFFC)-----\n\n");
     eax = 0x4FFFFFFC;
     __cpuid(&eax, &ebx, &ecx, &edx);
     printf("CPUID(0x4FFFFFFC), Total Exit Counter = %u \n", eax);
 
-    printf("-----Test Leaf Node CPUID(0x4FFFFFFD)-----\n");
+    printf("\n-----Test Leaf Node CPUID(0x4FFFFFFD)-----\\nn");
     eax = 0x4FFFFFFD;
     __cpuid(&eax, &ebx, &ecx, &edx);
     cycle_time = (unsigned long long) ebx << 32 | ecx;
@@ -41,7 +41,7 @@ main(int argc, char **argv)
         with version 09/30/2022    
     */
 
-    printf("-----Test Leaf Node CPUID(0x4FFFFFFE)-----\n");
+    printf("\n-----Test Leaf Node CPUID(0x4FFFFFFE)-----\n\n");
     for(i = -1; i < 71; i++) {
         eax = 0x4FFFFFFE;
         ecx = i;
@@ -55,7 +55,7 @@ main(int argc, char **argv)
         }
     }
 
-    printf("-----Test Leaf Node CPUID(0x4FFFFFFF)-----\n");
+    printf("\n-----Test Leaf Node CPUID(0x4FFFFFFF)-----\n\n");
     for(i = -1; i < 71; i++) {
         eax = 0x4FFFFFFF;
         ecx = i;
