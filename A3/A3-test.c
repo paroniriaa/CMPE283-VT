@@ -16,13 +16,32 @@ main(int argc, char **argv)
 {
     unsigned int eax, ebx, ecx, edx;
     unsigned long long cycle_time;
+    unsigned int ecx_copy;
+    int i;
 
     eax = 0x4FFFFFFC;
     __cpuid(&eax, &ebx, &ecx, &edx);
-    printf("CPUID(0x4FFFFFFC), Total exit counter = %u \n", eax);
+    printf("CPUID(0x4FFFFFFC), Total Exit Counter = %u \n", eax);
 
     eax = 0x4FFFFFFD;
     __cpuid(&eax, &ebx, &ecx, &edx);
     cycle_time = (unsigned long long) ebx << 32 | ecx;
-    printf("CPUID(0x4FFFFFFD), Total exit cycles = %llu \n", cycle_time);
+    printf("CPUID(0x4FFFFFFD), Total Exit Cycles = %llu \n", cycle_time);
+
+    for(i = 0; i < 70; i++) {
+        eax = 0x4FFFFFFE;
+        ecx = i;
+        __cpuid(&eax, &ebx, &ecx, &edx);
+        printf("CPUID(0x4FFFFFFE), Type %u Exit Count = %u \n", ecx, eax);       
+    }
+
+    for(i = 0; i < 70; i++) {
+        eax = 0x4FFFFFFF;
+        ecx = i;
+        ecx_copy = exc;
+        __cpuid(&eax, &ebx, &ecx, &edx);
+        cycle_time = (unsigned long long) ebx << 32 | ecx;
+        printf("CPUID(0x4FFFFFFE), Type %u Exit Cycles = %u \n", ecx_copy, cycle_time);       
+    }
+
 }
