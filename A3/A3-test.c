@@ -25,7 +25,7 @@ main(int argc, char **argv)
     __cpuid(&eax, &ebx, &ecx, &edx);
     printf("CPUID(0x4FFFFFFC), Total Exit Counter = %u \n", eax);
 
-    printf("\n-----Test Leaf Node CPUID(0x4FFFFFFD)-----\\nn");
+    printf("\n-----Test Leaf Node CPUID(0x4FFFFFFD)-----\n\n");
     eax = 0x4FFFFFFD;
     __cpuid(&eax, &ebx, &ecx, &edx);
     cycle_time = (unsigned long long) ebx << 32 | ecx;
