@@ -46,7 +46,7 @@ main(int argc, char **argv)
         eax = 0x4FFFFFFE;
         ecx = i;
         ecx_copy = ecx;
-        ((i == 35) || (i == 38) || (i == 42)) ? valid = false : valid = true;
+        ((i == 35) || (i == 38) || (i == 42) || (i < 0) || (i > 69)) ? valid = false : valid = true;
         __cpuid(&eax, &ebx, &ecx, &edx);
         if (valid) {
             printf("CPUID(0x4FFFFFFE), Valid Exit Type %u, Exit Count = %u \n", ecx_copy, eax);       
@@ -56,11 +56,11 @@ main(int argc, char **argv)
     }
 
     printf("-----Test Leaf Node CPUID(0x4FFFFFFF)-----\n");
-    for(i = 0; i < 71; i++) {
+    for(i = -1; i < 71; i++) {
         eax = 0x4FFFFFFF;
         ecx = i;
         ecx_copy = ecx;
-        ((i == 35) || (i == 38) || (i == 42)) ? valid = false : valid = true;
+        ((i == 35) || (i == 38) || (i == 42) || (i < 0) || (i > 69)) ? valid = false : valid = true;
         __cpuid(&eax, &ebx, &ecx, &edx);
         if (valid) {
             cycle_time = (unsigned long long) ebx << 32 | ecx;    
