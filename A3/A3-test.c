@@ -41,7 +41,7 @@ main(int argc, char **argv)
         ecx_copy = ecx;
         __cpuid(&eax, &ebx, &ecx, &edx);
         cycle_time = (unsigned long long) ebx << 32 | ecx;
-        printf("CPUID(0x4FFFFFFE), Type %u Exit Cycles = %llu \n", ecx_copy, cycle_time);       
+        printf("CPUID(0x4FFFFFFF), Type %u Exit Cycles = %llu \n", ecx_copy, cycle_time);       
     }
 
 }
