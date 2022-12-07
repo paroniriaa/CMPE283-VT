@@ -38,10 +38,10 @@ main(int argc, char **argv)
     for(i = 0; i < 70; i++) {
         eax = 0x4FFFFFFF;
         ecx = i;
-        ecx_copy = exc;
+        ecx_copy = ecx;
         __cpuid(&eax, &ebx, &ecx, &edx);
         cycle_time = (unsigned long long) ebx << 32 | ecx;
-        printf("CPUID(0x4FFFFFFE), Type %u Exit Cycles = %u \n", ecx_copy, cycle_time);       
+        printf("CPUID(0x4FFFFFFE), Type %u Exit Cycles = %llu \n", ecx_copy, cycle_time);       
     }
 
 }
