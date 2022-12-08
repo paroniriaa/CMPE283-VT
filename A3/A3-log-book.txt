@@ -1409,9 +1409,9 @@ Conclusion:
    to pay close attention to when modifying/optimizing our hypervisor so that our VMs that run on top of it can have
    the least performance(cpu cycle time) overhead.
 
-   Many thanks to Prof. Mike Larkin and GCP Education Team so that I can study Virtualization Technologies and gain
-   hands-on experiences in Nested Virtualization, Kernel Modification, and adding new CPUID leaf nodes to the KVM
-   hypervisor to empower it with new features.
+   Throughout the assignments, we gain hands-on experiences in CPU MSRs Discovery, Nested Virtualization, Kernel Modification, and adding
+   new CPUID leaf nodes to the KVM hypervisor to empower it with new features. Many thanks to Prof. Mike Larkin and
+   GCP Education Team! We can study Virtualization Technologies with ease and use powerful GCP VMs with no cost all because of them.
 
    Okay, that's about it, see you around, my friend. ;]
 
