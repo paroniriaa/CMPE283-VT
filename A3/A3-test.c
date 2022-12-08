@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+unsigned int type_exit_counter[75];
+unsigned long long type_cycle_time[75];
 
 static inline void
 __cpuid(unsigned int *eax, unsigned int *ebx, unsigned int *ecx,
@@ -17,8 +19,6 @@ main(int argc, char **argv)
     unsigned int eax, ebx, ecx, edx;
     unsigned long long cycle_time;
     unsigned int ecx_copy;
-    unsigned int type_exit_counter[75];
-    unsigned long long type_cycle_time[75];
     int i;
     
     printf("\n-----Test Leaf Node CPUID(0x4FFFFFFC)-----\n\n");
@@ -72,9 +72,9 @@ main(int argc, char **argv)
     }
 
     printf("\n-----Statics Overview For Each Basic Exit-----\n\n");
-    printf("Exit# %-2s Total Exit Counter %-5s Total Exit Cycles %-5s Cycles/Exit \n", " ", " ", " ");
+    printf("Exit# %-2s Exit Counter %-5s Exit Cycles %-5s Cycles/Exit \n", " ", " ", " ");
     for (i = 0; i < 75; i++) {
-        printf("%-10d %-11u %-13llu %-10llu \n", i, type_exit_counter[i], type_cycle_time[i], (type_cycle_time[i]/type_exit_counter[i]));
+        printf("%-10d %-11u %-13llu %-10llu \n", i, type_exit_counter[i], type_cycle_time[i], type_exit_counter[i] != 0 ? (type_cycle_time[i]/type_exit_counter[i]), 0);
     }
 
 }
