@@ -54,7 +54,7 @@ main(int argc, char **argv)
         ecx = i;
         ecx_copy = ecx;
         __cpuid(&eax, &ebx, &ecx, &edx);
-        printf("CPUID(0x4FFFFFFC), Type %u Total Exit Counter = %u \n", ecx_copy, eax);
+        printf("CPUID(0x4FFFFFFE), Type %u Total Exit Counter = %u \n", ecx_copy, eax);
         printf("EAX = %u  EBX = %u ECX = %u EDX = %u \n", eax, ebx, ecx, edx);
         type_exit_counter[i] = eax;
     }
@@ -66,13 +66,13 @@ main(int argc, char **argv)
         ecx_copy = ecx;
         __cpuid(&eax, &ebx, &ecx, &edx);
         cycle_time = (unsigned long long) ebx << 32 | ecx;
-        printf("CPUID(0x4FFFFFFD), Type %u Total Exit Cycles = %llu \n", ecx_copy, cycle_time);
+        printf("CPUID(0x4FFFFFFF), Type %u Total Exit Cycles = %llu \n", ecx_copy, cycle_time);
         printf("EAX = %u  EBX = %u ECX = %u EDX = %u \n", eax, ebx, ecx, edx);
         type_cycle_time[i] = cycle_time;
     }
 
     printf("\n-----Statics Overview For Each Basic Exit-----\n\n");
-    printf("Exit# %-2s Exit Counter %-5s Exit Cycles %-8s Cycles/Exit \n", " ", " ", " ");
+    printf("Exit Type %-5s Exit Counter %-5s Exit Cycles %-8s Cycles/Exit \n", " ", " ", " ");
     for (i = 0; i < 75; i++) {
         printf("%-8d %-18u %-20llu %-20llu \n", i, type_exit_counter[i], type_cycle_time[i], type_exit_counter[i] != 0 ? (type_cycle_time[i]/type_exit_counter[i]) : 0);
     }
