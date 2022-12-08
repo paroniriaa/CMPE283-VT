@@ -18,27 +18,32 @@ main(int argc, char **argv)
     unsigned long long cycle_time;
     unsigned int ecx_copy;
     int i;
-    bool valid;
     
     printf("\n-----Test Leaf Node CPUID(0x4FFFFFFC)-----\n\n");
     eax = 0x4FFFFFFC;
     __cpuid(&eax, &ebx, &ecx, &edx);
-    printf("CPUID(0x4FFFFFFC), Total Exit Counter = %u \n", eax);
+    printf("CPUID(0x4FFFFFFC), All Type Total Exit Counter = %u \n", eax);
+    printf("EAX = %u  EBX = %u ECX = %u EDX = %u \n", eax, ebx, ecx, edx);   
+
 
     printf("\n-----Test Leaf Node CPUID(0x4FFFFFFD)-----\n\n");
     eax = 0x4FFFFFFD;
     __cpuid(&eax, &ebx, &ecx, &edx);
     cycle_time = (unsigned long long) ebx << 32 | ecx;
-    printf("CPUID(0x4FFFFFFD), Total Exit Cycles = %llu \n", cycle_time);
+    printf("CPUID(0x4FFFFFFD), All Type Total Exit Cycles = %llu \n", cycle_time);
+    printf("EAX = %u  EBX = %u ECX = %u EDX = %u \n", eax, ebx, ecx, edx);
 
     /*
     For CPUID(0x4FFFFFFE) and CPUID(0x4FFFFFFF)
-    test range [0, 73] to include 3 cases:
-        1. ecx in valid range -> 0~34, 36~37, 39~41, 43~69
-        2. ecx in invalid range(not defined in SDM) -> 35, 38, 42   
-        3. ecx in invalid range(not enabled in KVM) -> 70~74
+    test range [0, 74] to include 3 cases:
+        The 1st invalid range for %ecx(not defined in SDM):
+            -> N<0, N>69, 35, 38, 42
+        The 2nd invalid range for %ecx(not enabled in KVM):
+            -> 5, 6, 11, 17, 65, 66, 69
+        The valid range for %ecx(defined in SDM and enabled in KVM):
+            -> 0~4, 7~10, 12~16, 18~34, 36~37, 39~41, 43~64, 67~68
         Note: above indexs referenced from textbook Combined Volume Set of Intel® 64 and IA-32 Architectures Software Developers Manuals 
-        with version 09/30/2022    
+        with version 09/30/2022 and vmx.h with last commit in 06/08/2022.
     */
 
     printf("\n-----Test Leaf Node CPUID(0x4FFFFFFE)-----\n\n");
@@ -46,13 +51,9 @@ main(int argc, char **argv)
         eax = 0x4FFFFFFE;
         ecx = i;
         ecx_copy = ecx;
-        ((i == 35) || (i == 38) || (i == 42) || (i < 0) || (i > 69)) ? valid = false : valid = true;
         __cpuid(&eax, &ebx, &ecx, &edx);
-        if (valid) {
-            printf("CPUID(0x4FFFFFFE), Valid Exit Type %u, Exit Count = %u \n", ecx_copy, eax);       
-        } else {
-            printf("CPUID(0x4FFFFFFE), Invalid Exit Type %u, EAX = %u EBX = %u ECX = %u EDX = %u \n", ecx_copy, eax, ebx, ecx, edx);       
-        }
+        printf("CPUID(0x4FFFFFFC), Type %u Total Exit Counter = %u \n", ecx_copy, eax);
+        printf("EAX = %u  EBX = %u ECX = %u EDX = %u \n", eax, ebx, ecx, edx);
     }
 
     printf("\n-----Test Leaf Node CPUID(0x4FFFFFFF)-----\n\n");
@@ -60,14 +61,10 @@ main(int argc, char **argv)
         eax = 0x4FFFFFFF;
         ecx = i;
         ecx_copy = ecx;
-        ((i == 35) || (i == 38) || (i == 42) || (i < 0) || (i > 69)) ? valid = false : valid = true;
         __cpuid(&eax, &ebx, &ecx, &edx);
-        if (valid) {
-            cycle_time = (unsigned long long) ebx << 32 | ecx;    
-            printf("CPUID(0x4FFFFFFF), Valid Exit Type %u, Exit Cycles = %llu \n", ecx_copy, cycle_time);       
-        } else {
-            printf("CPUID(0x4FFFFFFF), Invalid Exit Type %u, EAX = %u EBX = %u ECX = %u EDX = %u \n", ecx_copy, eax, ebx, ecx, edx);       
-        }
+            cycle_time = (unsigned long long) ebx << 32 | ecx;
+        printf("CPUID(0x4FFFFFFD), Type %u Total Exit Cycles = %llu \n", ecx_copy, cycle_time);
+        printf("EAX = %u  EBX = %u ECX = %u EDX = %u \n", eax, ebx, ecx, edx);
     }
 
 }
