@@ -1419,15 +1419,17 @@ Conclusion:
 Postscript:
    I hope my guides and the assignment log-books actually helped you to study these Virtualization Technologies topics :D,
    and I encourage you to do the same(if you feel like it), so the students that came after us can learn them without misery
-   (feeling lost, don't know what to do, stuck all day, etc.), which most of the time is unnecessary. I care because
-   I am once in their shoes, so I know how painful and helpless it could be, epically I know I keep failing not because
-   I am dumb but only because of lacking domain-specific knowledge and experience. you should know that it also applies
-   to you and everyone else. Just how great it could be if someone could be there for us and help us go through these subjects,
-   right? ;D
+   (feeling lost, don't know what to do, stuck all day, etc.), which is really unnecessary and can be avoided most of the time.
 
-   Luckily, some people(or I should call them heroes!) during my hardest time, like Qingwei Zen, Jack Gong, and many others.
-   The kindness and courage they pass down on me enable me to be there for you, and it would be great if you could be there
-   for others in the future.
+   I care because I am once in their shoes, so I know how painful and helpless it could be, epically I know I keep failing
+   not because I am dumb (okay maybe a bit) but only because of lacking domain-specific knowledge and experience.
+   You should know it also applies to you and everyone else. Nobody knows everything at the first place. We all need to learn,
+   and no man is above a new lesson. During the hard times of learning a new lesson, just how great it could be
+   if someone could be there for us, show us the way, and accompany us through hardship, right? ;D
+
+   Luckily, some people(or I should call them heroes!) once be there for me during my hardest time, like Qingwei Zen, Jack Gong,
+   and many others. The kindness and courage they pass down on me enable me to be there for you, and it would be great
+   if you could be there for others in the future.
 
    May the force and courage be with you.
 
