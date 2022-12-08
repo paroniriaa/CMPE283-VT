@@ -72,9 +72,9 @@ main(int argc, char **argv)
     }
 
     printf("\n-----Statics Overview For Each Basic Exit-----\n\n");
-    printf("Exit# %-2s Exit Counter %-5s Exit Cycles %-5s Cycles/Exit \n", " ", " ", " ");
+    printf("Exit# %-2s Exit Counter %-5s Exit Cycles %-8s Cycles/Exit \n", " ", " ", " ");
     for (i = 0; i < 75; i++) {
-        printf("%-8d %-15u %-20llu %-20llu \n", i, type_exit_counter[i], type_cycle_time[i], type_exit_counter[i] != 0 ? (type_cycle_time[i]/type_exit_counter[i]) : 0);
+        printf("%-8d %-18u %-20llu %-20llu \n", i, type_exit_counter[i], type_cycle_time[i], type_exit_counter[i] != 0 ? (type_cycle_time[i]/type_exit_counter[i]) : 0);
     }
 
 }
