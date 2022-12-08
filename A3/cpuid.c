@@ -1493,27 +1493,49 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 }
 EXPORT_SYMBOL_GPL(kvm_cpuid);
 
-/*
-* Modified function int kvm_emulate_cpuid(struct kvm_vcpu *vcpu) to report back
-* additional information when special CPUID leaf nodes are requested:
+ /*
+* Assignment 2 Modification ->
+* Modified function static int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
+* to report back additional information when special CPUID leaf nodes are requested:
 * %eax = 0x4FFFFFFC -> Return the total number of exits (all types) in %eax
-* %eax = 0x4FFFFFFD -> Return the high 32 bits of the total time spent processing all exits in %ebx
-*                    Return the low 32 bits of the total time spent processing all exits in %ecx 
+* %eax = 0x4FFFFFFD -> Return the high 32 bits of the total time spent processing exits (all types) in %ebx
+*                    Return the low 32 bits of the total time spent processing exits (all types) in %ecx
+* 
+* Assignment 3 Modification ->
+* Modified function static int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
+* to report back additional information when special CPUID leaf nodes are requested:
+* %eax = 0x4FFFFFFE -> Return the total number of exits (type-specified) in %eax
+* %eax = 0x4FFFFFFF -> Return the high 32 bits of the total time spent processing exits (type-specified) in %ebx
+*                    Return the low 32 bits of the total time spent processing all exits (type-specified) in %ecx
 */
 
-//volatile int counter for total_exits_counter, atomically initialize to 0
+//volatile int32 counter for recording total number of exits (all types), atomically initialize to 0
 atomic_t total_exits_counter = ATOMIC_INIT(0);
 //export the variable total_exits_counter so vmx.c can use it
 EXPORT_SYMBOL(total_exits_counter);
 
-//volatile int64 counter for total_cup_cycles_counter, atomically initialize to 0
-atomic64_t total_cup_cycles_counter = ATOMIC64_INIT(0);
+//volatile int64 counter for recording total number of cpu cycles on exits (all types), atomically initialize to 0
+atomic64_t total_cpu_cycles_counter = ATOMIC64_INIT(0);
 //export the variable total_cup_cycles_counter so vmx.c can use it
-EXPORT_SYMBOL(total_cup_cycles_counter);
+EXPORT_SYMBOL(total_cpu_cycles_counter);
+
+//volatile int64 counter for recording total number of exits (type-specified), all initialize to 0 internally
+atomic_t type_exits_counter[70];
+//export the variable type_exits_counter so vmx.c can use it
+EXPORT_SYMBOL(type_exits_counter);
+
+//volatile int64 counter for recording total number of cpu cycles on exits (type-specified), atomically initialize to 0
+atomic64_t type_cpu_cycles_counter[70];
+//export the variable type_cpu_cycles_counter so vmx.c can use it
+EXPORT_SYMBOL(type_cpu_cycles_counter);
 
 int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 {
 	u32 eax, ebx, ecx, edx;
+	// u32 variable for copying the value of ECX in case %eax = 0x4FFFFFFE and %eax = 0x4FFFFFFF
+	u32 ecx_copy;
+	// u64 variable for copying the value of exit counter from atomic64_read() in case %eax = 0x4FFFFFFD and %eax = 0x4FFFFFFF
+	u64 cycle_counter;
 
 	if (cpuid_fault_enabled(vcpu) && !kvm_require_cpl(vcpu, 0))
 		return 1;
@@ -1525,20 +1547,71 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	switch(eax) {
 		// case %eax = 0x4FFFFFFC
 		case 0x4FFFFFFC:
+			printk(KERN_INFO "### CPUID(0x4FFFFFFC) -> ");
 			eax = arch_atomic_read(&total_exits_counter);
+			printk(KERN_INFO "### Total Exits = %u", eax);
 			//printk(KERN_INFO "### Total Exits in EAX = %u", eax);
 			break;
 
 		// case %eax = 0x4FFFFFFD
 		case 0x4FFFFFFD:
+			printk(KERN_INFO "### CPUID(0x4FFFFFFD) -> ");
+			cycle_counter = atomic64_read(&total_cpu_cycles_counter);
 			//the high 32 bits of the total time spent processing all exits store in %ebx
-			ebx = (atomic64_read(&total_cup_cycles_counter) >> 32);;	
+			ebx = (cycle_counter >> 32);;	
 			//the low 32 bits of the total time spent processing all exits store in %ecx
-			ecx = (atomic64_read(&total_cup_cycles_counter) & 0xFFFFFFFF);
-			
+			ecx = (cycle_counter & 0xFFFFFFFF);
+			printk(KERN_INFO "### Total CPU Exit Cycle Time = %llu", cycle_counter);
 			//printk(KERN_INFO "### Total CPU Exit Cycle Time(hi) in EBX = %u", ebx);
 			//printk(KERN_INFO "### Total CPU Exit Cycle Time(lo) in ECX = %u", ecx);
 			break; 
+
+		// case %eax = 0x4FFFFFFE
+		case 0x4FFFFFFE:
+			printk(KERN_INFO "### CPUID(0x4FFFFFFE) -> ECX = %u", ecx);
+			// check if the value of %ecx is defined in SDM
+			if (ecx_defined_in_sdm(&ecx)) {
+				// check if the value of %ecx is enable in VMX
+				if (ecx_enabled_in_vmx(&ecx)) {
+					ecx_copy = ecx;
+					eax = arch_atomic_read(&type_exits_counter[(int)ecx]);
+					printk(KERN_INFO "### Type %u Exit Count = %u", ecx_copy, eax);
+					//printk(KERN_INFO "### Type %u Total Exits in EAX = %u", ecx_copy, eax);
+				} else {
+					printk(KERN_INFO "### Exit Number in ECX Defined in SDM But Not Enabled in KVM ");
+					eax = 0; ebx = 0; ecx = 0; edx = 0;	
+				}
+			} else {
+				printk(KERN_INFO "### Exit Number in ECX Not Defined in SDM ");
+				eax = 0; ebx = 0; ecx = 0; edx = 0xFFFFFFFF;	
+			}	
+			break;
+
+		// case %eax = 0x4FFFFFFF
+		case 0x4FFFFFFF:
+			printk(KERN_INFO "### CPUID(0x4FFFFFFF) -> ECX = %u", ecx);
+			// check if the value of %ecx is defined in SDM
+			if (ecx_defined_in_sdm(&ecx)) {
+				// check if the value of %ecx is enable in VMX
+				if (ecx_enabled_in_vmx(&ecx)) {
+					ecx_copy = ecx;
+					cycle_counter = atomic64_read(&type_cpu_cycles_counter[(int)ecx]);
+					//the high 32 bits of the total time spent processing all exits store in %ebx
+					ebx = (cycle_counter >> 32);;	
+					//the low 32 bits of the total time spent processing all exits store in %ecx
+					ecx = (cycle_counter & 0xFFFFFFFF);
+					printk(KERN_INFO "### Type %u CPU Exit Cycle Time = %llu", ecx_copy, cycle_counter);
+					//printk(KERN_INFO "### Type %u CPU Exit Cycle Time(hi) in EBX = %u", ecx_copy, ebx);
+					//printk(KERN_INFO "### Type %u CPU Exit Cycle Time(lo) in ECX = %u", ecx_copy, ecx);
+				} else {
+					printk(KERN_INFO "### Exit Number in ECX Defined in SDM But Not Enabled in KVM ");
+					eax = 0; ebx = 0; ecx = 0; edx = 0;	
+				}
+			} else {
+					printk(KERN_INFO "### Exit Number in ECX Not Defined in SDM ");
+					eax = 0; ebx = 0; ecx = 0; edx = 0xFFFFFFFF;	
+			}	
+			break;
 
 		// default case for all other %eax value
 		default:
@@ -1551,4 +1624,14 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	kvm_rdx_write(vcpu, edx);
 	return kvm_skip_emulated_instruction(vcpu);
 }
+
+// helper condition checking function for ecx value validation in SDM
+bool ecx_defined_in_sdm(u32 *ecx) {
+	return (*ecx >= 0 && *ecx <= 69 && *ecx != 35 && *ecx != 38 && *ecx != 42);
+}
+// helper condition checking function for ecx value validation in VMX
+bool ecx_enabled_in_vmx(u32 *ecx) {
+	return (*ecx != 5 && *ecx != 6 && *ecx != 11 && *ecx != 17 && *ecx != 65 && *ecx != 66 && *ecx != 69);
+}
+
 EXPORT_SYMBOL_GPL(kvm_emulate_cpuid);

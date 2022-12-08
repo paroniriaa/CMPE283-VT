@@ -6279,8 +6279,37 @@ void dump_vmcs(struct kvm_vcpu *vcpu)
 /*
  * The guest has exited.  See if we can fix it or if we need userspace
  * assistance.
- 
  */
+
+ /*
+* Assignment 2 Modification ->
+* Modified function static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
+* to report back additional information when special CPUID leaf nodes are requested:
+* %eax = 0x4FFFFFFC -> Return the total number of exits (all types) in %eax
+* %eax = 0x4FFFFFFD -> Return the high 32 bits of the total time spent processing exits (all types) in %ebx
+*                    Return the low 32 bits of the total time spent processing exits (all types) in %ecx
+* 
+* Assignment 3 Modification ->
+* Modified function static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
+* to report back additional information when special CPUID leaf nodes are requested:
+* %eax = 0x4FFFFFFE -> Return the total number of exits (type-specified) in %eax
+* %eax = 0x4FFFFFFF -> Return the high 32 bits of the total time spent processing exits (type-specified) in %ebx
+*                    Return the low 32 bits of the total time spent processing all exits (type-specified) in %ecx
+*/
+
+//extern global volatile int32 variable total_exits_counter (from cpuid.c) 
+//for recording total number of exits (all types)
+extern atomic_t total_exits_counter;
+//extern global volatile int64 variable total_cpu_cycles_counter (from cpuid.c) 
+//for recording total number of cpu cycles on exits (all types)
+extern atomic64_t total_cpu_cycles_counter;
+
+//extern global volatile int32 array variable type_exits_counter (from cpuid.c) 
+//for recording total number of exits (type-specified)
+extern atomic_t type_exits_counter[70];
+//extern global volatile int64 array variable type_cpu_cycles_counter (from cpuid.c) 
+//for recording total number of cpu cycles on exits (type-specified)
+extern atomic64_t type_cpu_cycles_counter[70];
 
 static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 {
@@ -6288,6 +6317,11 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	union vmx_exit_reason exit_reason = vmx->exit_reason;
 	u32 vectoring_info = vmx->idt_vectoring_info;
 	u16 exit_handler_index;
+
+	// local uint64_t variables for record the beginning and the ending of processor's time stamp counter
+	uint64_t begin_time_stamp_counter, end_time_stamp_counter;
+	// local int variable to store the return status of vmx handler exit function
+	int exit_handler_status;
 
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more
@@ -6446,7 +6480,31 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	if (!kvm_vmx_exit_handlers[exit_handler_index])
 		goto unexpected_vmexit;
 
-	return kvm_vmx_exit_handlers[exit_handler_index](vcpu);;
+	// increase by 1 for every exit
+	arch_atomic_inc(&total_exits_counter);
+
+	// increase by 1 for current type-specified exit
+	if (exit_reason.basic < 70) {
+		arch_atomic_inc(&type_exits_counter[(int)exit_reason.basic]);
+	}
+	// record the beginning of cpu's time stamp counter
+	begin_time_stamp_counter = rdtsc();
+
+	// call the corresponding exit handler to handle the exit
+	exit_handler_status = kvm_vmx_exit_handlers[exit_handler_index](vcpu);
+
+	// record the ending of cpu's time stamp counter
+	end_time_stamp_counter = rdtsc();
+
+	// compute the current time stamp gap and add it to the cpu cycle time of total exits
+	arch_atomic64_add((end_time_stamp_counter - begin_time_stamp_counter), &total_cpu_cycles_counter);
+
+	// compute the current time stamp gap and add it to the cpu cycle time of type-specified exit
+	if (exit_reason.basic < 70) {
+		arch_atomic64_add((end_time_stamp_counter - begin_time_stamp_counter), &type_cpu_cycles_counter[(int)exit_reason.basic]);
+	}
+
+	return exit_handler_status;
 
 unexpected_vmexit:
 	vcpu_unimpl(vcpu, "vmx: unexpected exit reason 0x%x\n",
@@ -6461,40 +6519,9 @@ unexpected_vmexit:
 	return 0;
 }
 
-/*
-* Assignment 2 Modification ->
-* Modified function static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
-* to report back additional information when special CPUID leaf nodes are requested:
-* %eax = 0x4FFFFFFC -> Return the total number of exits (all types) in %eax
-* %eax = 0x4FFFFFFD -> Return the high 32 bits of the total time spent processing all exits in %ebx
-*                    Return the low 32 bits of the total time spent processing all exits in %ecx 
-*/
-
-//extern global u32 variable (from cpuid.c) for recording total number of exits
-extern atomic_t total_exits_counter;
-//extern global uint64_t variable (from cpuid.c) for recording total number of cpu cycles on exits
-extern atomic64_t total_cup_cycles_counter;
-
 static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 {
-
-	// local uint64_t variables for record the beginning and the ending of processor's time stamp counter 
-	uint64_t begin_time_stamp_counter, end_time_stamp_counter;
-	// local int variable to store the return status of vmx handler exit function
-	int ret;
-
-	// increase by 1 for every exit
-	arch_atomic_inc(&total_exits_counter);
-	// record the beginning of cpu's time stamp counter 
-	begin_time_stamp_counter = rdtsc();
-
-	// call the corressponding exit handler to handle the exit
-	ret = __vmx_handle_exit(vcpu, exit_fastpath);
-
-	// record the ending of cpu's time stamp counter
-	end_time_stamp_counter = rdtsc();
-	// compute the current time stamp gap and add it to the total cpu cycle time
-	arch_atomic64_add((end_time_stamp_counter - begin_time_stamp_counter), &total_cup_cycles_counter);
+	int ret = __vmx_handle_exit(vcpu, exit_fastpath);
 
 	/*
 	 * Exit to user space when bus lock detected to inform that there is
