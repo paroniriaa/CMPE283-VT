@@ -1627,11 +1627,37 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 
 // helper condition checking function for ecx value validation in SDM
 bool ecx_defined_in_sdm(u32 *ecx) {
-	return (*ecx >= 0 && *ecx <= 69 && *ecx != 35 && *ecx != 38 && *ecx != 42);
+	int lower_bound = 0;
+	int upper_bound = 69;
+	int sdm_not_defined_exit[] = {35, 38, 42};
+	int length = (int)(sizeof(sdm_not_defined_exit) / sizeof(sdm_not_defined_exit[0]));
+	int i;
+
+	if (*ecx >= lower_bound && *ecx <= upper_bound) {
+		for (i = 0; i < length; i++) {
+			if (*ecx == sdm_not_defined_exit[i]) {
+				return false;
+			}
+		}
+		return true;
+	} else {
+		return false;
+	}
+
 }
-// helper condition checking function for ecx value validation in VMX
+
+// helper condition checking function for ecx value validation in KVM
 bool ecx_enabled_in_vmx(u32 *ecx) {
-	return (*ecx != 5 && *ecx != 6 && *ecx != 11 && *ecx != 17 && *ecx != 65 && *ecx != 66 && *ecx != 69);
+	int vmx_not_enabled_exit[] = {3, 4, 5, 6, 11, 16, 17, 33, 34, 51, 63, 64, 65, 66, 67, 68, 69};
+	int length = (int)(sizeof(vmx_not_enabled_exit) / sizeof(vmx_not_enabled_exit[0]));
+	int i;
+
+	for (i = 0; i < length; i++) {
+		if (*ecx == vmx_not_enabled_exit[i]) {
+			return false;
+		}
+	}
+	return true;
 }
 
 EXPORT_SYMBOL_GPL(kvm_emulate_cpuid);

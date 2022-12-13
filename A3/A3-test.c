@@ -36,16 +36,18 @@ main(int argc, char **argv)
     printf("EAX = %u  EBX = %u ECX = %u EDX = %u \n", eax, ebx, ecx, edx);
 
     /*
-    For CPUID(0x4FFFFFFE) and CPUID(0x4FFFFFFF)
-    test range [0, 74] to include 3 cases:
-        The 1st invalid range for %ecx(not defined in SDM):
-            -> N<0, N>69, 35, 38, 42
-        The 2nd invalid range for %ecx(not enabled in KVM):
-            -> 5, 6, 11, 17, 65, 66, 69
-        The valid range for %ecx(defined in SDM and enabled in KVM):
-            -> 0~4, 7~10, 12~16, 18~34, 36~37, 39~41, 43~64, 67~68
-        Note: above indexs referenced from textbook Combined Volume Set of Intel® 64 and IA-32 Architectures Software Developers Manuals 
-        with version 09/30/2022 and vmx.h with last commit in 06/08/2022.
+    The 1st invalid range for %ecx(not defined in SDM):
+        -> N<0, N>69, 35, 38, 42
+    The 2nd invalid range for %ecx(not defined/enabled in KVM):
+        -> 3~6, 11, 16~17, 33~34, 51, 63~69
+    The valid range for %ecx(defined in SDM and enabled in KVM):
+        -> 0~2, 7~10, 12~15, 18~32, 36~37, 39~41, 43~50, 52~62
+    (CRITICAL)
+    The above basic exit reason index info are retried from :
+        1. textbook Combined Volume Set of Intel® 64 and IA-32 Architectures Software Developers Manuals
+        with version 09/30/2022
+        2. vmx.h -> linux/arch/x86/include/uapi/asm/vmx.h with last commit in 05/24/2022.
+        3. vmx.c -> linux/arch/x86/include/kvm/vmx/vmx.c with last commit in  10/05/2022.
     */
 
     printf("\n-----Test Leaf Node CPUID(0x4FFFFFFE)-----\n\n");
