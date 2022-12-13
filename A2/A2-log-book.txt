@@ -1,18 +1,17 @@
 ---CRITICAL NOTE---
 All commands listed here are done in a Linux(Ubuntu) machine, so try to modify some steps/elements if you are using Windows/Mac.
 
-
 0. (Optional) You can first download and install GCP CLI tools:
-        Check out https://cloud.google.com/sdk/docs/install to install it. 
+        Check out https://cloud.google.com/sdk/docs/install to install it.
 
-1. Set up free billing account using the Google Cloud Education Credit Coupon 
+1. Set up free billing account using the Google Cloud Education Credit Coupon
         Note: Much thanks to Prof. Mike Larkin and GCP Education Team, you guys are great! :D
 
 2. Create new project named CMPE-283, and connect it with the billing account created in step 1.
 
 3. Enable Computer Engine API, wait for its initialization to be done.
 
-4. Configure VM Intance on GCP:
+4. Configure VM Instance on GCP:
         Go to GCP -> Compute Engine -> Virtual Machines -> VM instances -> Create instance:
         Name: Instance-1
         Region: us-west1(Oregon)
@@ -48,16 +47,16 @@ All commands listed here are done in a Linux(Ubuntu) machine, so try to modify s
 7. Generate public and private SSH-KEY:
         # you should run this only one time, then copy your ssh key
         # located A2/scripts/, modify it before you use
-        bash gcp-gen-ssh.sh:       
+        bash gcp-gen-ssh.sh:
                 # define $USER if needed
 
                 ssh-keygen -t rsa -f ~/.ssh/google_cloud_key -C $USER
-                
+
                 cat /home/$USER/.ssh/google_cloud_key.pub
-        
+
         Note: If you have terminated a VM in GCP which happens to have the same external IP address to the VM that you just create
                 you will run into host authenticity failure which blocks you from establishing the SSH connection between your
-                machine and the host -> because GCP reused the same IP but different ECDSA key fingerprint(public key) for 
+                machine and the host -> because GCP reused the same IP but different ECDSA key fingerprint(public key) for
                 different VM, so your known host info recorded in your .ssh/known_hosts has a mismatch (GCP should really fix it....)
         Sol: re-create your SSH KEY using the gcp-gen-ssh.sh, do step 8 to add the fresh SSH key and delete the old SSH key, then
                 you should be good to go (but the price is that you will need to add all the host info again when connecting :C)
@@ -71,10 +70,10 @@ All commands listed here are done in a Linux(Ubuntu) machine, so try to modify s
                 Key: ssh-sra AAAA.....XfGI0= <your name> (just copy from ssh-sra...to the end)
 
 9. Connect to default VM instance-1 in GCP:
-        # located A2/scripts/, modify it before you use 
+        # located A2/scripts/, modify it before you use
         bash gcp-ssh-vm.sh -e  -e <vm-external-IP>
-                # define $USER if needed 
-                        
+                # define $USER if needed
+
                 while getopts e: flag; do
                         case "${flag}" in
                         e) EXTERNAL_IP=${OPTARG} ;;
@@ -104,16 +103,16 @@ All commands listed here are done in a Linux(Ubuntu) machine, so try to modify s
 
         #This line of command may not necessarily work as $(uname -r) does not guarantee to give the 'right' version for your linux-headers(such as WSL)
         sudo apt-get install linux-headers-$(uname -r)
-        
+
         # If failed, try to use the following to find the right version of linux header for your machine
                 apt search linux-headers
                 ls -l /usr/src/linux-headers-$(uname -r)
 
-        #---CRITICAL NOTE---: 
+        #---CRITICAL NOTE---:
                 If you are using WSL/WSL2, you will not be able to find the
                 corresponding linux header because the base WSL2 kernel does not
-                allow modules to be loaded. You have to download, compile and use 
-                your own kernel build. 
+                allow modules to be loaded. You have to download, compile and use
+                your own kernel build.
                 For details, refer to https://unix.stackexchange.com/questions/594470/wsl-2-does-not-have-lib-modules
                 Also, here's the WSL2 kernel GitHub Repo https://github.com/microsoft/WSL2-Linux-Kernel
 
@@ -134,17 +133,17 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 
 14. (Optional) Install GPG for GPG key export and commit signature:
         sudo apt-get install gnupg
-        gpg --list-keys 
-        gpg --full-generate-key 
+        gpg --list-keys
+        gpg --full-generate-key
                 RSA and RSA (default)
                 4096
                 1y
-                Y 
-                <your name> 
-                <your email> 
+                Y
+                <your name>
+                <your email>
                 <your password>
                 <your password again>
-        gpg --list-keys 
+        gpg --list-keys
         gpg --export --armor <your email>
         gpg --export --armor --output <some file name>.gpg.pub <your email>
 
@@ -152,19 +151,19 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
         git config --global user.name <your name>
         git config --global user.email <your email>
         gpg --list-secret-keys --keyid-format=long
-                #sec   rsa4096/<your-private-key> 
+                #sec   rsa4096/<your-private-key>
         git config --global gpg.program gpg
-        git config --global user.signingKey your-private-key 
+        git config --global user.signingKey your-private-key
         git config --global commit.gpgsign true
         git config --global --list
 
         # commit your code by the following
-        git add -A 
+        git add -A
         git status
         git commit -m "<your commmit message>"
         git push
 
-        Note: 
+        Note:
         you might encounter errors like:
                 error: gpg failed to sign the data
                 fatal: failed to write commit object
@@ -178,13 +177,13 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 
         # check your signed/unsigne log history easily
         git log --pretty="format:%h %G? %aN  %s"
-        
-        Note: 
+
+        Note:
         In case you mess up something, dont worry, heres a trick for you to revoke commit using git:
                 #n is the number of commits you wanna revokes
                 git reset --soft HEAD~n
                 git push origin +main --force
-        In case you mess up on some branch and want to force sync your local branch with the current main branch:        
+        In case you mess up on some branch and want to force sync your local branch with the current main branch:
                 git reset --hard origin/main
 
 16. (CRTICAL) check if the current VM has the nested virtualization functionalities:
@@ -194,7 +193,7 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
                 If you strictly followed my gcp-create-vm.sh shell script, you should be fine, as we explicitly configured that
                 '--enable-nested-virtualization' when creating the VM. Still, we need to double-check:
         We can check using the following command:
-       
+
         cat /proc/cpuinfo
 
         It will show detail cpu info for your machine, but we only care about the field 'vmx flags', so if you find it present
@@ -235,7 +234,7 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
                 any output other than 0 indicated that the nested virtualization capability is enabled
 
         if you want, you can check the amount of disk space available on the filesystem with each file name's argument:
-        
+
         df -h
                 Filesystem      Size  Used Avail Use% Mounted on
                 /dev/root       9.6G  2.2G  7.4G  23% /
@@ -262,13 +261,13 @@ so now we need to do it for the right configuration and environment for A2 and A
 
 18. The forked linux kernel may not be buildable as it is not yet correctly configured for the current VM we are running,
         #check screenshots/VM-cp-kernel-config-file.jpg
-        
+
         so we need to find the corresponding configuration file for it:
-        cd ~/linux 
+        cd ~/linux
         uname -r
                 Note: my VM's kernel release is '5.15.0-1025-gcp', yours might be different,
                 mark it as you will need it for the next command
-        
+
         cp /boot/config-5.15.0-1025-gcp ~/linux/.config
                 Note: if cp cannot find it, you need to find it yourself, cd to /boot and ls to check all available config file
                 and use the matched one
@@ -316,7 +315,7 @@ so now we need to do it for the right configuration and environment for A2 and A
                 drwxrwxr-x  41 junjie junjie   4096 Dec  3 14:05 tools
                 drwxrwxr-x   4 junjie junjie   4096 Dec  3 14:05 usr
                 drwxrwxr-x   4 junjie junjie   4096 Dec  3 14:05 virt
-        
+
         cat into it if you like, its hella long, all related to VM configuration :]
 
 19. build the linux kernel using the .config file we copied:
@@ -327,7 +326,7 @@ so now we need to do it for the right configuration and environment for A2 and A
         # (CRITICAL) install these essential tools before you make oldconfig, depends on your VM, you may need to install other needed tools, try to figure it out yourself :C
         sudo apt-get install build-essential
         sudo apt-get install kernel-package
-        sudo apt-get install ccache 
+        sudo apt-get install ccache
         sudo apt-get install flex
         sudo apt-get install bison
         sudo apt-get install libssl-dev
@@ -335,14 +334,14 @@ so now we need to do it for the right configuration and environment for A2 and A
 
         make oldconfig
                 Note: even though we have our .config file, we still need to answer a bunch of configuration questions, but luckily the oldconfig
-                will figure out the default options for us, so we just need to press 'Enter' key all the way to the end :D 
+                will figure out the default options for us, so we just need to press 'Enter' key all the way to the end :D
 
         (CRITICAL)Note: Before you build the modules, you may want to double-check your .config file to change some content to prevent make modules from failing
-        
+
         scripts/config --disable SYSTEM_TRUSTED_KEYS
                 Note: or change the value of 'CONFIG_SYSTEM_TRUSTED_KEYS' to ""
                 -> CONFIG_SYSTEM_TRUSTED_KEYS = ""
-        
+
         scripts/config --disable SYSTEM_REVOCATION_KEYS
                 Note: or change the value of 'CONFIG_SYSTEM_REVOCATION_KEYS' to ""
                 -> CONFIG_SYSTEM_REVOCATION_KEYS = ""
@@ -354,17 +353,17 @@ so now we need to do it for the right configuration and environment for A2 and A
                 Note: if you do everything correctly, there should be no errors and make should be successfully complete; if not, try to debug!
                         (most likely is because you did not install all the needed tools)
 
-21. build all the modules that goes into the linux kernel:          
+21. build all the modules that goes into the linux kernel:
         #check screenshots/VM-make-modules.jpg
         make -j <your-vm-cpu-total-core-number> modules
                 Note: you can use more than one CPU core to build all the modules for linux kernel
                         This is a process that would take EXTREMELY long time to finish, so MAKE SURE you use all cores available,
                         otherwise you will regret...:C
 
-22. build the linux kernel itself:        
+22. build the linux kernel itself:
         #check screenshots/VM-make-kernel-0.jpg
         #check screenshots/VM-make-kernel-1.jpg
-        make -j <your-vm-cpu-total-core-number> 
+        make -j <your-vm-cpu-total-core-number>
                 Note: again, you can use more than one CPU core to build the linux kernel
                 and again, this is a process that would take EXTREMELY long time to finish, so MAKE SURE you use all cores available,
                 otherwise you will regret...:C
@@ -380,20 +379,20 @@ so now we need to do it for the right configuration and environment for A2 and A
 24. now we can finally install our fully-built linux kernel to our VM:
         #check screenshots/VM-install-kernel.jpg
         sudo make -j <your-vm-cpu-total-core-number> install
-        check 
+        check
 
 25. (CRITICAL) reboot the VM to have it boot the newly installed linux kernel:
         #check screenshots/VM-before-reboot.jpg
         sudo reboot
-        
+
 26. (CRITICAL) now connect back to the VM, use uname command to check if our newly installed linux kernel is loaded:
         #check screenshots/VM-after-reboot.jpg
-        uname -a 
+        uname -a
 
 
 27. (optional)Try to compile and run the initial cmpe283-1.c code and check the boosted linux kernel output of MSR discovery(IA32_VMX_PINBASED_CTLS for now):
         #check screenshots/VM-nested-kernel-test.jpg
-        
+
         # the initial implementation of cmpe283-1.c should have included the discovery of IA32_VMX_PINBASED_CTLS
         # if you are using my version of cmpe283-1.c, it would print the complete MSRs discovery
         # welp we just gonna compile it and run it to make sure our working environment is compatible for A2 and A3
@@ -404,7 +403,7 @@ so now we need to do it for the right configuration and environment for A2 and A
         make test
 
         if everything works fine, you should be able to see something like this:
-        
+
         # Display the kernel log
         sudo dmesg
         [  169.300446] cmpe283_1: loading out-of-tree module taints kernel.
@@ -425,16 +424,16 @@ so now we need to do it for the right configuration and environment for A2 and A
 
 28. to make changes in the kvm hypervisor, we first need to navigate to 'arch' directory,
     then check both kvm.c and cpuid.c:
-    
+
     cd ~/linux/arch/x86/kvm
     ls
 
     cpuid.c is what we are looking for here
 
-    Note: this is not related to the A2/A3, but you will see directory 'vmx' and 'svm' here, 
+    Note: this is not related to the A2/A3, but you will see directory 'vmx' and 'svm' here,
     which corresponding to intel brand and amd brand cpu, and we can check vmx/vmx.c to see
     how intel handle the vm exit:
-        vim cmx.c 
+        vim cmx.c
         /handle_exit
         /kvm_emulate_cpuid
             Note: you will notice that kvm_emulate_cpuid does not define here, then it must be defined somewhere else, lets find it!
@@ -444,50 +443,22 @@ so now we need to do it for the right configuration and environment for A2 and A
             Note: you will see that both CPU brands pass the exit handle to cpuid.c for kvm_emulate_cpuid, so lets take a closer look.
         vim cpuid.c
             Note: there we go! function -> int kvm_emulate_cpuid(struct kvm_vcpu *cpu) is the main character that we are looking for in A2/A3,
-                which handles all the kvm cpuid exit 
+                which handles all the kvm cpuid exit
 
 29. before we do anything to change the content of kvm.c and cpuid.c, let's save the original copy for future reference and comparison purpose:
-        cp ~/linux/arch/x86/kvm/cpuid.c ~/CMPE283-VT/A2/source/cpuid.origin.c  
-        diff ~/linux/arch/x86/kvm/cpuid.c ~/CMPE283-VT/A2/source/cpuid.origin.c  
+        cp ~/linux/arch/x86/kvm/cpuid.c ~/CMPE283-VT/A2/source/cpuid.origin.c
+        diff ~/linux/arch/x86/kvm/cpuid.c ~/CMPE283-VT/A2/source/cpuid.origin.c
         cp ~/linux/arch/x86/kvm/vmx/vmx.c ~/CMPE283-VT/A2/source/vmx.origin.c
         diff ~/linux/arch/x86/kvm/vmx/vmx.c ~/CMPE283-VT/A2/source/vmx.origin.c
 
-30. now, following the requirements in the A2/A3 instructions, we will be modifying the CPUID emulation code in KVM to report back additional information
+30. now, following the requirements in the A2 instructions, we will be modifying the CPUID emulation code in KVM to report back additional information
 when special CPUID leaf nodes are requested:
     A2:
         %eax=0x4FFFFFFC -> Return the total number of exits (all types) in %eax
-        
+
         %eax=0x4FFFFFFD -> Return the high 32 bits of the total time spent processing all exits in %ebx
-                            Return the low 32 bits of the total time spent processing all exits in %ecx 
+                            Return the low 32 bits of the total time spent processing all exits in %ecx
                             Note: %ebx and %ecx return values are measured in processor cycles, across all VCPUs
-    A3:
-        %eax=0x4FFFFFFE -> Return the number of exits for the exit number provided (on input) in %ecx
-                            Note: This value should be returned in %eax
-        
-        %eax=0x4FFFFFFF -> Return the time spent processing the exit number provided (on input) in %ecx
-                            Note: Return the high 32 bits of the total time spent for that exit in %ebx
-                                    Return the low 32 bits of the total time spent for that exit in %ecx
-        
-
-        (CRITICAL)Note: For leaf nodes 0x4FFFFFFE and 0x4FFFFFFF, if %ecx (on input) contains a value not defined by the
-                        SDM, return 0 in all %eax, %ebx, %ecx registers and return 0xFFFFFFFF in %edx. For exit types not
-                        enabled in KVM, return 0s in all four registers.
-
-                        In other words, when dealing A3:
-                        -> if the value of %ecx is not in the valid range: %eax = %ebx = %ecx = 0, %edx = 0xFFFFFFFF
-                        -> if the exit types not enabled in KVM -> %eax = %ebx = %ecx = %edx = 0
-
-
-        Note: For the exit number provided in %ecx, we can check each of the supported number and its indicator in the textbook
-                -> Combined Volume Set of Intel® 64 and IA-32 Architectures Software Developers Manuals
-                -> Volume 3 (3A, 3B, 3C & 3D): System Programming Guide
-                -> Appendix C VMX Basic Exit Reasons 
-                -> Table C-1. Basic Exit Reasons (page 4285)
-
-                Notice that some basic exit reason number does not exit, for example, 35, etc.
-                In other words:
-                -> The valid range for %ecx: 0~34, 36~37, 39~41, 43~69
-                -> The invalid range for %ecx: 35, 38, 42, N>69
 
 
 31. let's modify ~/linux/arch/x86/kvm/vmx/vmx.c first for A2 requirement:
@@ -636,15 +607,15 @@ but first we need to install some extra tools for KVM, then check kvm-ok, and re
 
         then log back in to our VM:
                 bash gcp-ssh-vm.sh -e <your-vm-external-IP>
-        
+
 38. cool! Now lets go to your localhost machine and open up your Chrome browser:
         Go to https://remotedesktop.google.com/headless
         (CRITICAL) Log in using the same account which you use for your GCP VM
-        
+
         Note: For the following procedure, You only need to perform once
-        
-        Set up via SSH -> 
-        Set uo another computer-> 
+
+        Set up via SSH ->
+        Set uo another computer->
         begin -> next -> authorize ->
         copy the script with title 'Debian Linux' ->
         paste it into your VM terminal -> run ->
@@ -659,7 +630,7 @@ but first we need to install some extra tools for KVM, then check kvm-ok, and re
 
         Mark down the 6-digits pin you enter as we will bw using that connect to our VM
 
-        Go back to your chrome browser -> remote access -> choose can click on your registered VM instance -> 
+        Go back to your chrome browser -> remote access -> choose can click on your registered VM instance ->
         type the 6-digits pin -> done! :D
 
                 Note: the chrome-based GUI display of our VM terminal has configuration as well,
@@ -673,12 +644,12 @@ but first we need to install some extra tools for KVM, then check kvm-ok, and re
         wget https://releases.ubuntu.com/jammy/ubuntu-22.04.1-desktop-amd64.iso
         sudo mv ~/ubuntu-22.04.1-desktop-amd64.iso /var/lib/libvirt/images/
         sudo virt-manager
-        
+
         If you get everything done correctly, the virt-manager GUI should pop up on your
         chrome browser already and ready for VM configuration:
 
         create a new virtual machine-> forward ->
-        browse the OS image ISO -> 
+        browse the OS image ISO ->
         choose ubuntu-22.04.1-desktop-amd64.iso ->
         choose volume -> forward ->
         Memory -> half of your VM memory ->
@@ -694,8 +665,8 @@ but first we need to install some extra tools for KVM, then check kvm-ok, and re
 
         Note: depends on your KVM's configurations, you may encounter situation where the inner-vm
                 keeps frozen after the reboot -> it is common, and it is okay to force shut down and then
-                start the VM again. 
-        
+                start the VM again.
+
 37. now we can perform our A2 exit handling testing on the newly installed inner-VM:
         but first we need essential building tools:
         sudo apt-get update
@@ -744,6 +715,44 @@ but first we need to install some extra tools for KVM, then check kvm-ok, and re
 38. compile and run A2-test.c to verify the result of CPUID leaf eax = 0x4FFFFFFC and eax = 0x4FFFFFFD:
 
     make
-    make test
+    make run
 
     A2-test result:
+        (1st run)
+        ./A2-test
+        CPUID(0x4FFFFFFC), Total exit counter = 6460757
+        CPUID(0x4FFFFFFD), Total exit cycles = 67151925918
+        ---wait few seconds between runs---
+        (2nd run)
+        ./A2-test
+        CPUID(0x4FFFFFFC), Total exit counter = 6466720
+        CPUID(0x4FFFFFFD), Total exit cycles = 67174390690
+        ---wait few seconds between runs---
+        (3rd run)
+        ./A2-test
+        CPUID(0x4FFFFFFC), Total exit counter = 6471035
+        CPUID(0x4FFFFFFD), Total exit cycles = 67191636674
+        ---wait few seconds between runs---
+        (4th run)
+        ./A2-test
+        CPUID(0x4FFFFFFC), Total exit counter = 6474505
+        CPUID(0x4FFFFFFD), Total exit cycles = 67204865408
+        ...
+        (you can continue to run and test, but I think the result pattern is obvious enough...)
+        (btw, you can go back to L1 VM and use command 'sudo dmesg' to verify the test result)
+
+        We can see that based on the CPUID leaf node we implemented on
+        %eax = 0x4FFFFFFC and %eax = 0x4FFFFFFD, our total exit counter and
+        cpu cycles will be increasing continuously as basic exits (regardless of the type)
+        constantly happens in our L2-VM (inner VM) and trigger the L1-VM
+        (outer VM) to handle the exits and update the total exit counter
+        and total exit cycles we implemented in cpuid.c and vmx.c
+
+        Now we know that our VM triggers the exit handler function all the time,
+        but we don't know the exact exit counter and exit cpu cycle time for
+        different types of exits. It is very important to get to know these numbers
+        as some type of exits happens a lot more frequently than others, and some type of
+        exits take a lot of cpu cycle time, while others only take a few. Lets move
+        forward to A3 where we will be implementing the other 2 CPUID leaf node
+        %eax = 0x4FFFFFFE and %eax = 0x4FFFFFFF to find out the secrets of those
+        numbers! :D

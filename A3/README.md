@@ -32,36 +32,39 @@ Refer to [A3 Instruction](source/283_Assignment2-3_F22.pdf) for detailed info an
 
 ### A3 Result Demonstration
 
+only the head of each test section are attached for A3 result demonstration  
 (check out [A3 screenshots](screenshots/) for more)
 
-GCP-VM-L2-A3-Test-Result-E-0
-![GCP-VM-L2-A3-Test-Result-E-0](screenshots/VM-L2-A3-test-result-E-0.jpg)
+GCP-VM-L2-A3-Test-Result-E-[0-9]
+![GCP-VM-L2-A3-Test-Result-E-[0-9]](screenshots/VM-L2-A3-test-result-E-%5B0-9%5D.jpg)
 
-GCP-VM-L2-A3-Test-Result-F-0
-![GCP-VM-L2-A3-Test-Result-F-0](screenshots/VM-L2-A3-test-result-F-0.jpg)
+GCP-VM-L2-A3-Test-Result-F-0[0-16]
+![GCP-VM-L2-A3-Test-Result-F-0[0-16]](screenshots/VM-L2-A3-test-result-F-%5B0-16%5D.jpg)
 
-VM-L2-A3-Test-Result-Statics-0
-![VM-L2-A3-Test-Result-Statics-0](screenshots/VM-L2-A3-test-result-statics-0%5B1st%5D.jpg)
+GCP-VM-L1-Demsg-For-A3-Test-E-[0-17]
+![GCP-VM-L1-Demsg-For-A3-Test-E-[0-17]](screenshots/VM-L1-demsg-for-A3-test-E-%5B0-17%5D.jpg)
 
-GCP-VM-L1-Demsg-For-A3-Test-E-0
-![GCP-VM-L1-Demsg-For-A3-Test-E-0](screenshots/VM-L1-demsg-for-A3-test-E-0.jpg)
+GCP-VM-L1-Demsg-For-A3-Test-F-[0-19]
+![GCP-VM-L1-Demsg-For-A3-Test-F-[0-19]](screenshots/VM-L1-demsg-for-A3-test-F-%5B0-19%5D.jpg)
 
-GCP-VM-L1-Demsg-For-A3-Test-F-0
-![GCP-VM-L1-Demsg-For-A3-Test-F-0](screenshots/VM-L1-demsg-for-A3-test-F-0.jpg)
+VM-L2-A3-Test-Result-Statics-[1st][0-32]
+![VM-L2-A3-Test-Result-Statics-[1st][0-32]](screenshots/VM-L2-A3-test-result-statics-%5B1st%5D%5B0-32%5D.jpg)
 
+VM-L2-A3-Test-Result-Statics-[2nd][0-32]
+![VM-L2-A3-Test-Result-Statics-[2nd][0-32]](screenshots/VM-L2-A3-test-result-statics-%5B2nd%5D%5B0-32%5D.jpg)
 
 
 A3 Questions:
 
 * Does the number of exits increase at a stable rate?
   * No, some of the exits increase, some of them stay the same. Among the ones that increase,
-           they have different increment ratio depends on the exit type.
+  they have different increment ratio depends on the exit type.
 
 * Are there more exits performed during certain VM operations?
   * Yes, for example, EXIT_REASON_CPUID(10), EXIT_REASON_IO_INSTRUCTION(30), EXIT_REASON_MSR_READ(31), etc.
 
 * Approximately how many exits does a full VM boot entail?
-    * It entails total 912772 exits with total 13080154698 cycle times.
+    * It entails total 912798 exits with total 13052862220 cycle times.
     
 * Of the exit types defined in the SDM, which are the most frequent? Least?
   * EXIT_REASON_EPT_VIOLATION(48) happens the most frequent, EXIT_REASON_DR_ACCESS(29) happens the least frequent
